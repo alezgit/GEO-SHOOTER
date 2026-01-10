@@ -192,12 +192,60 @@ wss.on("connection", (ws) => {
             playerId: ws.playerId
           }));
         }
+      } else if (data.type === "player_action") {
+        // Player performs action (blow, shake, etc.)
+        const room = rooms[ws.room];
+        if (room && room.pc) {
+          room.pc.send(JSON.stringify({
+            type: "player_action",
+            playerId: ws.playerId,
+            action: data.action
+          }));
+          console.log(`Player ${ws.playerId} performed action: ${data.action}`);
+        }
       } else if (data.type === "game_update") {
         // PC broadcasts game state to all players
         const room = rooms[ws.room];
         if (room && ws.role === "pc") {
           room.players.forEach(p => {
             p.ws.send(msg);
+          });
+        }
+      } else if (data.type === "arena_event") {
+        // PC broadcasts arena event to all players
+        const room = rooms[ws.room];
+        if (room && ws.role === "pc") {
+          console.log(`Broadcasting arena event: ${data.event}`);
+          room.players.forEach(p => {
+            p.ws.send(JSON.stringify(data));
+          });
+        }
+      } else if (data.type === "arena_event_end") {
+        // PC broadcasts arena event end to all players
+        const room = rooms[ws.room];
+        if (room && ws.role === "pc") {
+          console.log(`Arena event ended`);
+          room.players.forEach(p => {
+            p.ws.send(JSON.stringify(data));
+          });
+        }
+      } else if (data.type === "player_status") {
+        // PC sends status to specific player
+        const room = rooms[ws.room];
+        if (room && ws.role === "pc") {
+          const player = room.players.find(p => p.id === data.playerId);
+          if (player) {
+            player.ws.send(JSON.stringify(data));
+            console.log(`Sent status '${data.status}' to player ${data.playerId}`);
+          }
+        }
+      } else if (data.type === "game_end") {
+        // PC broadcasts game end to all players
+        const room = rooms[ws.room];
+        if (room && ws.role === "pc") {
+          console.log(`Game ended - Winner: ${data.winner || 'Draw'}`);
+          room.players.forEach(p => {
+            p.ws.send(JSON.stringify(data));
           });
         }
       }
