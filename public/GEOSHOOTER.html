@@ -150,7 +150,7 @@
     </style>
   </head>
   <body>
-    <h1>⚔️ GEO-SHOOTER</h1>
+    <h1>🔫 GEO-SHOOTER</h1>
 
     <div id="controls">
       <input id="room" placeholder="Enter Room ID" value="war123" />
@@ -179,6 +179,10 @@
       <audio id="player-respawn-sound" src="/sounds/player-respawn.mp3"></audio>
       <audio id="player-joined-sound" src="/sounds/player-joined.mp3"></audio>
       <audio id="move-over-item-sound" src="/sounds/move-over-item.mp3"></audio>
+      <audio
+        id="collect-powerup-sound"
+        src="/sounds/collect-powerup.mp3"
+      ></audio>
     </div>
 
     <script>
@@ -624,6 +628,13 @@
       function playMoveOverItemSound() {
         moveOverItem.currentTime = 0;
         moveOverItem.play();
+      }
+
+      const collectPowerUp = document.getElementById("collect-powerup-sound");
+
+      function playCollectPowerUpSound() {
+        collectPowerUp.currentTime = 0;
+        collectPowerUp.play();
       }
       // SOUND SETUP END
 
@@ -1201,7 +1212,6 @@
             if (isInZone(player, zone)) {
               switch (zone.type) {
                 case "heal":
-                  console.log("picked");
                   player.health = Math.min(
                     player.maxHealth,
                     player.health + 0.3
@@ -1229,6 +1239,7 @@
               // Check if colors match
               const playerColor = CHARACTERS[player.character].color;
               if (playerColor === powerUp.color) {
+                playCollectPowerUpSound();
                 // Recharge ability ONLY if colors match
                 player.abilityCooldown = 0;
 

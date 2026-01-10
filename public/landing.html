@@ -3,87 +3,175 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GEO-SHOOTER</title>
+    <title>GEO-SHOOTER | Battle Arena</title>
 
     <style>
       * {
-        box-sizing: border-box;
         margin: 0;
         padding: 0;
-        font-family: "Segoe UI", sans-serif;
+        box-sizing: border-box;
+        font-family: "Segoe UI", system-ui, sans-serif;
       }
 
       body {
         height: 100vh;
-        background: radial-gradient(circle at top, #1a1f3a, #0a0e27);
+        overflow: hidden;
+        background: radial-gradient(circle at top, #1a1f3a, #050816);
+        color: white;
+      }
+
+      /* ===== Background Animation ===== */
+      .background {
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(
+          rgba(255, 69, 0, 0.15) 1px,
+          transparent 1px
+        );
+        background-size: 60px 60px;
+        animation: drift 40s linear infinite;
+        opacity: 0.4;
+      }
+
+      @keyframes drift {
+        from {
+          background-position: 0 0;
+        }
+        to {
+          background-position: 600px 600px;
+        }
+      }
+
+      /* ===== Main Layout ===== */
+      .wrapper {
+        position: relative;
+        z-index: 1;
+        height: 100%;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: white;
+        padding: 2rem;
       }
 
-      .container {
+      .card {
+        width: 100%;
+        max-width: 460px;
         text-align: center;
-        padding: 3rem;
-        background: rgba(0, 0, 0, 0.45);
-        border-radius: 20px;
-        border: 2px solid #ff4500;
-        box-shadow: 0 0 30px rgba(255, 69, 0, 0.4);
-        max-width: 420px;
-        width: 90%;
+        padding: 3rem 2.5rem;
+        background: rgba(10, 14, 39, 0.85);
+        border-radius: 22px;
+        border: 2px solid rgba(255, 69, 0, 0.6);
+        box-shadow: 0 0 40px rgba(255, 69, 0, 0.45),
+          inset 0 0 25px rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(8px);
       }
 
+      /* ===== Title ===== */
       h1 {
-        font-size: 2.5rem;
+        font-size: 3rem;
+        letter-spacing: 3px;
         margin-bottom: 0.5rem;
         color: #ff6b35;
-        text-shadow: 0 0 15px rgba(255, 69, 0, 0.6);
+        text-shadow: 0 0 15px rgba(255, 69, 0, 0.9),
+          0 0 35px rgba(255, 69, 0, 0.6);
       }
 
-      p {
-        color: #ccc;
-        margin-bottom: 2rem;
+      .subtitle {
+        font-size: 1.05rem;
+        color: #cfcfcf;
+        margin-bottom: 2.5rem;
       }
 
+      /* ===== Buttons ===== */
       .btn {
-        display: block;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.6rem;
         margin: 1rem auto;
-        padding: 1rem;
         width: 100%;
-        max-width: 300px;
+        max-width: 320px;
+        padding: 1rem;
         font-size: 1.1rem;
-        font-weight: bold;
-        text-decoration: none;
+        font-weight: 700;
         color: white;
-        border-radius: 12px;
+        text-decoration: none;
+        border-radius: 14px;
         background: linear-gradient(135deg, #ff4500, #ff6b35);
-        box-shadow: 0 4px 15px rgba(255, 69, 0, 0.4);
-        transition: transform 0.2s, box-shadow 0.2s;
+        box-shadow: 0 6px 18px rgba(255, 69, 0, 0.5),
+          inset 0 0 10px rgba(255, 255, 255, 0.1);
+        transition: all 0.25s ease;
+      }
+
+      .btn.secondary {
+        background: linear-gradient(135deg, #2196f3, #00bcd4);
+        box-shadow: 0 6px 18px rgba(33, 150, 243, 0.5),
+          inset 0 0 10px rgba(255, 255, 255, 0.1);
       }
 
       .btn:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 25px rgba(255, 69, 0, 0.6);
+        transform: translateY(-4px) scale(1.02);
+        box-shadow: 0 10px 28px rgba(255, 69, 0, 0.7);
       }
 
+      .btn.secondary:hover {
+        box-shadow: 0 10px 28px rgba(33, 150, 243, 0.7);
+      }
+
+      /* ===== Footer Hint ===== */
       .hint {
-        margin-top: 1.5rem;
+        margin-top: 2.2rem;
         font-size: 0.85rem;
         color: #aaa;
+        line-height: 1.5;
+      }
+
+      .divider {
+        margin: 1.8rem auto;
+        width: 60%;
+        height: 1px;
+        background: linear-gradient(
+          to right,
+          transparent,
+          rgba(255, 255, 255, 0.4),
+          transparent
+        );
+      }
+
+      /* ===== Mobile tweaks ===== */
+      @media (max-width: 480px) {
+        h1 {
+          font-size: 2.4rem;
+        }
+
+        .card {
+          padding: 2.5rem 1.8rem;
+        }
       }
     </style>
   </head>
+
   <body>
-    <div class="container">
-      <h1>⚔️ GEO-SHOOTER</h1>
-      <p>Multiplayer phone-controlled battle arena</p>
+    <div class="background"></div>
 
-      <a href="/pc" class="btn">🖥️ Open Game Display</a>
-      <a href="/phone" class="btn">📱 Join as Player</a>
+    <div class="wrapper">
+      <div class="card">
+        <h1>🔫 GEO-SHOOTER</h1>
+        <div class="subtitle">
+          Phone-controlled multiplayer<br />
+          battle arena
+        </div>
 
-      <div class="hint">
-        Open the display on a computer<br />
-        Join using your phone
+        <a href="/pc" class="btn"> 🖥️ Launch Game Display </a>
+
+        <a href="/phone" class="btn secondary"> 📱 Join as Player </a>
+
+        <div class="divider"></div>
+
+        <div class="hint">
+          Open the game screen on a computer<br />
+          Use your phone as the controller
+        </div>
       </div>
     </div>
   </body>
