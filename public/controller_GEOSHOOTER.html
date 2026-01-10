@@ -4,6 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>GEO-SHOOTER Controller</title>
+    <!-- ADD THIS CONSOLE -->
+  <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+  <script>eruda.init();</script>
+
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22><text y=%2250%%22 font-size=%2252%22>🎮</text></svg>">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -406,14 +410,15 @@ html, body {
 .action-buttons {
   position: fixed;
   bottom: 2rem;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 90%;
-  max-width: 500px;
+  left: 0;
+  right: 0;
+  width: 100%;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 0 1.5rem 0 1.5rem; /* Padding on both sides */
   pointer-events: none;
+  gap: 1rem; /* Add gap between buttons - adjust this value to control spacing */
 }
 
 .action-buttons > * {
@@ -436,7 +441,9 @@ html, body {
   cursor: pointer;
   transition: transform 0.1s;
   order: 2;
-  touch-action: none; /* Blocca tutte le gesture, solo tap */
+  touch-action: none;
+  margin-left: auto; /* Push to right side */
+  margin-right: 0; /* But keep close due to padding */
 }
     
     #shoot-btn:active {
@@ -448,6 +455,7 @@ html, body {
 /* Ability Button - LEFT THUMB */
 .ability-btn-container {
   order: 1;
+  margin-right: auto; /* Push to far left */
 }
 
 #ability-btn {
@@ -687,6 +695,36 @@ html, body {
         ax: 0.00 | ay: 0.00
       </div>
     </div>
+
+    <!-- Event Notification -->
+<div id="event-notification" style="display: none; position: fixed; top: 50%; left: 50%; 
+     transform: translate(-50%, -50%); background: rgba(0,0,0,0.95); 
+     padding: 2rem; border-radius: 20px; border: 3px solid #ff4500; 
+     z-index: 150; text-align: center; min-width: 300px;">
+  <div id="event-icon" style="font-size: 4rem; margin-bottom: 1rem;">🔥</div>
+  <div id="event-name" style="font-size: 1.5rem; font-weight: bold; margin-bottom: 1rem;">Fire Tempest</div>
+  <div id="event-timer" style="font-size: 1rem; color: #888;">15s remaining</div>
+</div>
+
+<!-- Player Status Warning -->
+<div id="status-warning" style="display: none; position: fixed; bottom: 150px; 
+     left: 50%; transform: translateX(-50%); background: rgba(255,0,0,0.9); 
+     padding: 1.5rem 2rem; border-radius: 15px; border: 3px solid #fff; 
+     z-index: 140; text-align: center; animation: pulse-warning 1s infinite;">
+  <div id="warning-text" style="font-size: 1.3rem; font-weight: bold;">
+    🔥 YOU ARE ON FIRE!
+  </div>
+  <div id="warning-instruction" style="font-size: 1rem; margin-top: 0.5rem;">
+    💨 BLOW INTO MIC TO EXTINGUISH!
+  </div>
+</div>
+
+<style>
+@keyframes pulse-warning {
+  0%, 100% { transform: translateX(-50%) scale(1); }
+  50% { transform: translateX(-50%) scale(1.05); }
+}
+</style>
     
     <div class="control-buttons">
       <button class="ctrl-btn" id="start-sensors">▶ START</button>
@@ -751,62 +789,144 @@ html, body {
       }
     };
 
-    // ==================== WEBSOCKET ====================
-    const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-    const socket = new WebSocket(`${protocol}://${window.location.host}`);
-    const statusEl = document.getElementById('status');
-    
-    let selectedCharacter = null;
-    let sensorActive = false;
-    let roomId = null;
-    let playerId = null;
-    let abilityCooldownEnd = 0;
-    let cooldownInterval = null;
-    let calibrationX = 0;
-    let calibrationSamples = [];
-    let isCalibrating = false;
+// ==================== WEBSOCKET ====================
+const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+const socket = new WebSocket(`${protocol}://${window.location.host}`);
+const statusEl = document.getElementById('status');
 
-    socket.onopen = () => {
-      statusEl.textContent = '🟢 Connected - Enter Room ID';
-      statusEl.style.background = 'rgba(0,255,136,0.2)';
-    };
+let selectedCharacter = null;
+let sensorActive = false;
+let roomId = null;
+let playerId = null;
+let abilityCooldownEnd = 0;
+let cooldownInterval = null;
+let calibrationX = 0;
+let calibrationSamples = [];
+let isCalibrating = false;
 
-    socket.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        
-        if (data.type === 'player_id') {
-          playerId = data.id;
-          console.log('Assigned player ID:', playerId);
-        } else if (data.type === 'game_start') {
-  console.log('Game started!', data.players);
-  document.getElementById('character-select').style.display = 'none';
-  document.getElementById('rotation-message').style.display = 'flex';
-  setupAbilityUI();
-} else if (data.type === 'game_update' && data.players) {
-          // Update UI based on player state
-          const myData = data.players.find(p => p.id === playerId);
-          if (myData) {
-            updatePlayerUI(myData);
-          }
-        } else if (data.type === 'game_end') {
-          const isWinner = data.winner === playerId;
-          showGameOver(isWinner, data.character);
-        }
-      } catch (e) {
-        console.error('Error parsing message:', e);
+socket.onopen = () => {
+  statusEl.textContent = '🟢 Connected - Enter Room ID';
+  statusEl.style.background = 'rgba(0,255,136,0.2)';
+};
+
+socket.onmessage = (event) => {
+  try {
+    const data = JSON.parse(event.data);
+
+    if (data.type === 'arena_event') {
+      showEventNotification(data);
+      
+      // Setup microphone if fire event
+      if (data.event === 'INFERNO') {
+        setupMicrophone();
       }
-    };
+      
+      // Enable gravity inversion
+      if (data.event === 'GRAVITY_CHAOS') {
+        isGravityChaos = true;
+      }
+    }
+    
+    if (data.type === 'arena_event_end') {
+      hideEventNotification();
+      isGravityChaos = false;
+    }
+    
+    if (data.type === 'player_status') {
+      if (data.playerId === playerId) {
+        showStatusWarning(data.status, data.message);
+      }
+    }
+    
+    if (data.type === 'player_id') {
+      playerId = data.id;
+      console.log('Assigned player ID:', playerId);
+    } else if (data.type === 'game_start') {
+      console.log('Game started!', data.players);
+      document.getElementById('character-select').style.display = 'none';
+      document.getElementById('rotation-message').style.display = 'flex';
+      setupAbilityUI();
+    } else if (data.type === 'game_update' && data.players) {
+      // Update UI based on player state
+      const myData = data.players.find(p => p.id === playerId);
+      if (myData) {
+        updatePlayerUI(myData);
+      }
+    } else if (data.type === 'game_end') {
+      const isWinner = data.winner === playerId;
+      showGameOver(isWinner, data.character);
+    }
+  } catch (e) {
+    console.error('Error parsing message:', e);
+  }
+};
 
-    socket.onerror = () => {
-      statusEl.textContent = '❌ Connection Error';
-      statusEl.style.background = 'rgba(255,0,0,0.2)';
-    };
+socket.onerror = () => {
+  statusEl.textContent = '❌ Connection Error';
+  statusEl.style.background = 'rgba(255,0,0,0.2)';
+};
 
-    socket.onclose = () => {
-      statusEl.textContent = '🔴 Disconnected';
-      statusEl.style.background = 'rgba(255,0,0,0.2)';
-    };
+socket.onclose = () => {
+  statusEl.textContent = '🔴 Disconnected';
+  statusEl.style.background = 'rgba(255,0,0,0.2)';
+};
+
+let isGravityChaos = false;
+
+function showEventNotification(data) {
+  const notif = document.getElementById('event-notification');
+  document.getElementById('event-icon').textContent = data.icon;
+  document.getElementById('event-name').textContent = data.name;
+  
+  notif.style.display = 'block';
+  
+  // Update timer
+  const endTime = Date.now() + data.duration;
+  const timerInterval = setInterval(() => {
+    const remaining = Math.ceil((endTime - Date.now()) / 1000);
+    document.getElementById('event-timer').textContent = `${remaining}s remaining`;
+
+    if (remaining <= 0) {
+      clearInterval(timerInterval);
+      notif.style.display = 'none';
+    }
+  }, 1000);
+
+  // Hide after 3 seconds, keep timer visible
+  setTimeout(() => {
+    notif.style.opacity = '0.3';
+    notif.style.bottom = '20px';
+    notif.style.top = 'auto';
+    notif.style.transform = 'translateX(-50%)';
+    notif.style.transition = 'all 0.5s';
+  }, 3000);
+}
+
+function hideEventNotification() {
+  document.getElementById('event-notification').style.display = 'none';
+}
+
+function showStatusWarning(status, message) {
+  const warning = document.getElementById('status-warning');
+  const text = document.getElementById('warning-text');
+  const instruction = document.getElementById('warning-instruction');
+
+  if (status === 'on_fire') {
+    warning.style.background = 'rgba(255, 69, 0, 0.95)';
+    text.textContent = '🔥 YOU ARE ON FIRE!';
+    instruction.textContent = '💨 BLOW INTO MIC TO EXTINGUISH!';
+    warning.style.display = 'block';
+
+    setupMicrophone(); // Ensure mic is ready
+  } else if (status === 'frozen') {
+    warning.style.background = 'rgba(0, 191, 255, 0.95)';
+    text.textContent = '❄️ YOU ARE FROZEN!';
+    instruction.textContent = '📱 SHAKE TO BREAK FREE!';
+    warning.style.display = 'block';
+  } else if (status === 'clear') {
+    warning.style.display = 'none';
+  }
+}
 
     // ==================== UI UPDATES ====================
     function updatePlayerUI(data) {
@@ -1048,6 +1168,8 @@ document.getElementById('rotation-ready-btn').addEventListener('click', () => {
       if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
     });
 
+    
+
     // ==================== SENSOR CONTROLS ====================
     const startBtn = document.getElementById('start-sensors');
     const stopBtn = document.getElementById('stop-sensors');
@@ -1122,11 +1244,16 @@ setTimeout(() => {
   if (adjustedX < 0) {
     // Apply power curve: smaller negative values get boosted more aggressively
     // This makes the "angle range" for negative X feel wider
-    adjustedX = -Math.pow(Math.abs(adjustedX), 0.85) * 2.0;
+    adjustedX = -Math.pow(Math.abs(adjustedX), 0.75) * 3.5;
   } else {
     // Positive X needs slightly less aggressive boost
     adjustedX = adjustedX * 1.2;
   }
+
+  if (isGravityChaos) {
+  adjustedY = -adjustedY;
+  adjustedX = -adjustedX;
+}
 
   // SWAPPED AXES MAPPING + SEND:
   // Y axis = VERTICAL movement (up/down) 
@@ -1137,6 +1264,110 @@ setTimeout(() => {
     ay: -adjustedX      // X: NEGATIVE = RIGHT, POSITIVE = LEFT (NEGATED!)
   }));
 }
+
+// ============ MICROPHONE FOR FIRE ============
+let audioContext, analyser, microphone;
+let microphoneActive = false;
+
+async function setupMicrophone() {
+  if (microphoneActive) return;
+  
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    analyser = audioContext.createAnalyser();
+    microphone = audioContext.createMediaStreamSource(stream);
+    microphone.connect(analyser);
+    analyser.fftSize = 256;
+    microphoneActive = true;
+    
+    console.log('🎤 Microphone ready');
+    
+    // Start checking for blows
+    setInterval(checkForBlow, 100);
+  } catch (e) {
+    console.error('Microphone not available:', e);
+  }
+}
+
+let lastBlowTime = 0;
+
+function checkForBlow() {
+  if (!analyser) return;
+  
+  const bufferLength = analyser.frequencyBinCount;
+  const dataArray = new Uint8Array(bufferLength);
+  analyser.getByteFrequencyData(dataArray);
+  
+  const lowFreqVolume = dataArray.slice(0, 15).reduce((a,b) => a+b) / 15;
+  
+  const now = Date.now();
+  if (lowFreqVolume > 75 && now - lastBlowTime > 500) {
+    lastBlowTime = now;
+    
+    // Send blow action
+    socket.send(JSON.stringify({
+      type: 'player_action',
+      playerId: playerId,  // ← ADD THIS LINE
+      action: 'blow'
+    }));
+    
+    // Visual feedback
+    document.body.style.background = '#00ff88';
+    setTimeout(() => {
+      document.body.style.background = '';
+    }, 200);
+    
+    if (navigator.vibrate) navigator.vibrate(100);
+    
+    console.log('💨 BLOW detected!');
+  }
+}
+
+// ============ SHAKE DETECTION FOR FREEZE ============
+let lastShakeTime = 0;
+let shakeCount = 0;
+
+function detectShake(event) {
+  const acc = event.accelerationIncludingGravity || {};
+  const total = Math.sqrt((acc.x||0)**2 + (acc.y||0)**2 + (acc.z||0)**2);
+  
+  if (total > 25) { // Strong shake threshold
+    const now = Date.now();
+    
+    if (now - lastShakeTime < 600) {
+      shakeCount++;
+      
+      if (shakeCount >= 3) { // 3 shakes to break free
+        socket.send(JSON.stringify({
+          type: 'player_action',
+          playerId: playerId,  // ← ADD THIS LINE
+          action: 'shake'
+        }));
+        
+        shakeCount = 0;
+        
+        document.body.style.background = '#00BFFF';
+        setTimeout(() => {
+          document.body.style.background = '';
+        }, 200);
+        
+        if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
+        
+        console.log('📱 SHAKE detected!');
+      }
+    } else {
+      shakeCount = 1;
+    }
+    
+    lastShakeTime = now;
+  }
+}
+
+// Add shake detection to motion handler
+window.addEventListener('devicemotion', detectShake);
+
+
 // ==================== PREVENT ZOOM ON BUTTONS ====================
 document.getElementById('shoot-btn').addEventListener('touchstart', (e) => {
   e.preventDefault(); // Previene double-tap zoom

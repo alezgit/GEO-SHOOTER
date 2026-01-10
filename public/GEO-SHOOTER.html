@@ -285,8 +285,6 @@
             return obs;
           },
           generateZones: () => [
-            { x: canvas.width/2 - 40, y: 50, w: 80, h: 80, type: "speed", color: "#00BCD4" },
-            { x: canvas.width/2 - 40, y: canvas.height - 130, w: 80, h: 80, type: "speed", color: "#00BCD4" }
           ]
         },
         maze: {
@@ -307,9 +305,7 @@
             return obs;
           },
           generateZones: () => [
-            { x: 50, y: canvas.height/2 - 40, w: 80, h: 80, type: "damage", color: "#F44336" },
-            { x: canvas.width - 130, y: canvas.height/2 - 40, w: 80, h: 80, type: "damage", color: "#F44336" },
-            { x: canvas.width/2 - 40, y: canvas.height/2 - 40, w: 80, h: 80, type: "heal", color: "#4CAF50" }
+
           ]
         },
         fortress: {
@@ -331,9 +327,7 @@
             return obs;
           },
           generateZones: () => [
-            { x: canvas.width/2 - 30, y: canvas.height/2 - 30, w: 60, h: 60, type: "heal", color: "#4CAF50" },
-            { x: 150, y: canvas.height/2 - 40, w: 80, h: 80, type: "slow", color: "#9E9E9E" },
-            { x: canvas.width - 230, y: canvas.height/2 - 40, w: 80, h: 80, type: "slow", color: "#9E9E9E" }
+
           ]
         },
         chaos: {
@@ -389,12 +383,8 @@
         specialZones = map.generateZones();
         
         // Healing camps in corners (always present)
-        camps = [
-          { x: 50, y: 50, w: 80, h: 80, color: "#1565C0" },
-          { x: canvas.width - 130, y: 50, w: 80, h: 80, color: "#C62828" },
-          { x: 50, y: canvas.height - 130, w: 80, h: 80, color: "#2E7D32" },
-          { x: canvas.width - 130, y: canvas.height - 130, w: 80, h: 80, color: "#F57C00" }
-        ];
+        // Initialize empty camps array - will spawn randomly
+        camps = [];
         
         powerUps = [];
         
@@ -402,30 +392,274 @@
       }
 
       // Spawn power-up for ability recharge
-      function spawnPowerUp() {
-        if (gameState !== "playing") return;
-        
-        const playerColors = Object.values(players).map(p => CHARACTERS[p.character].color);
-        if (playerColors.length === 0) return;
-        
-        // Pick a random player's color
-        const color = playerColors[Math.floor(Math.random() * playerColors.length)];
-        
-        // Find safe spawn location
-        let x, y, attempts = 0;
-        do {
-          x = 100 + Math.random() * (canvas.width - 200);
-          y = 100 + Math.random() * (canvas.height - 200);
-          attempts++;
-        } while (attempts < 50 && isColliding(x, y, 20));
-        
-        powerUps.push({
-          x, y,
-          color,
-          spawnTime: Date.now(),
-          radius: 20
-        });
-      }
+      // Drop types that can spawn
+const DROP_TYPES = {
+  ABILITY: {
+    icon: "⚡",
+    color: "#FFD700",
+    effect: "recharge_ability",
+    duration: 12000, // 12 seconds on map
+    radius: 20
+  },
+  SPEED: {
+    icon: "💨",
+    color: "#00BCD4", 
+    effect: "speed_boost",
+    duration: 10000,
+    radius: 20,
+    boostDuration: 5000 // How long the boost lasts
+  },
+  HEALTH: {
+    icon: "❤️",
+    color: "#4CAF50",
+    effect: "heal",
+    duration: 8000,
+    radius: 20,
+    healAmount: 30
+  }
+};
+
+// Global event system
+const ARENA_EVENTS = {
+  INFERNO: {
+    name: "Fire Tempest",
+    icon: "🔥",
+    duration: 15000, // Event lasts 15 seconds
+    backgroundTint: 'rgba(255, 69, 0, 0.25)',
+    wallColor: '#8B0000',
+    gridColor: 'rgba(255, 100, 0, 0.15)'
+  },
+  BLIZZARD: {
+    name: "Ice Blizzard", 
+    icon: "❄️",
+    duration: 18000,
+    backgroundTint: 'rgba(0, 191, 255, 0.2)',
+    wallColor: '#4682B4',
+    gridColor: 'rgba(200, 230, 255, 0.1)',
+    particleColor: '#E0F7FF'
+  },
+  GRAVITY_CHAOS: {
+    name: "Gravity Chaos",
+    icon: "🌀",
+    duration: 8000,
+    backgroundTint: 'rgba(156, 39, 176, 0.2)',
+    wallColor: '#7B1FA2',
+    gridColor: 'rgba(200, 100, 255, 0.1)'
+  }
+};
+
+let currentEvent = null;
+let eventStartTime = 0;
+let eventInterval = null;
+
+// Track player-specific event states
+// players[id].onFire = { startTime, wallX, wallY }
+// players[id].frozen = { startTime, frozenUntil }
+
+function startArenaEvents() {
+  if (eventInterval) clearInterval(eventInterval);
+  
+  const scheduleNextEvent = () => {
+    // Events happen after game has been running for a bit
+    // Random interval: 25-40 seconds between events
+    const delay = 25000 + Math.random() * 15000;
+    
+    setTimeout(() => {
+      spawnArenaEvent();
+      scheduleNextEvent();
+    }, delay);
+  };
+  
+  // First event after 30 seconds of gameplay
+  setTimeout(() => {
+    spawnArenaEvent();
+    scheduleNextEvent();
+  }, 30000);
+}
+
+function spawnArenaEvent() {
+  if (gameState !== "playing") return;
+  if (currentEvent) return; // One event at a time
+  
+  // Pick random event
+  const eventKeys = Object.keys(ARENA_EVENTS);
+  const randomKey = eventKeys[Math.floor(Math.random() * eventKeys.length)];
+  const eventData = ARENA_EVENTS[randomKey];
+  
+  currentEvent = {
+    type: randomKey,
+    ...eventData
+  };
+  eventStartTime = Date.now();
+  
+  console.log(`🎮 EVENT STARTED: ${eventData.name}`);
+  
+  // Notify all players
+  ws.send(JSON.stringify({
+    type: 'arena_event',
+    event: randomKey,
+    name: eventData.name,
+    icon: eventData.icon,
+    duration: eventData.duration
+  }));
+  
+  // Auto-clear after duration
+  setTimeout(() => {
+    currentEvent = null;
+    console.log('✅ Event ended');
+    
+    // Notify phones event ended
+    ws.send(JSON.stringify({
+      type: 'arena_event_end'
+    }));
+  }, eventData.duration);
+}
+
+let activeDrops = [];
+
+function spawnDrop() {
+  if (gameState !== "playing") return;
+  
+  // Maximum 2 drops at once
+  if (activeDrops.length >= 2) return;
+  
+  // Pick random drop type
+  const dropKeys = Object.keys(DROP_TYPES);
+  const randomKey = dropKeys[Math.floor(Math.random() * dropKeys.length)];
+  const dropType = DROP_TYPES[randomKey];
+  
+  // Find safe spawn location
+  let x, y, attempts = 0;
+  do {
+    x = 150 + Math.random() * (canvas.width - 300);
+    y = 150 + Math.random() * (canvas.height - 300);
+    attempts++;
+  } while (attempts < 50 && isColliding(x, y, dropType.radius));
+  
+  activeDrops.push({
+    type: randomKey,
+    x, y,
+    spawnTime: Date.now(),
+    ...dropType
+  });
+  
+  console.log(`Spawned ${randomKey} drop at (${x}, ${y})`);
+}
+
+// Natural drop rhythm: every 8-12 seconds
+let dropInterval = null;
+function startDropSpawning() {
+  if (dropInterval) clearInterval(dropInterval);
+  
+  const scheduleNextDrop = () => {
+    const delay = 8000 + Math.random() * 4000; // 8-12 seconds
+    setTimeout(() => {
+      spawnDrop();
+      scheduleNextDrop();
+    }, delay);
+  };
+  // Spawn one random healing pad
+function spawnHealingPad() {
+  if (gameState !== "playing") return;
+  if (camps.length > 0) return; // Only one at a time
+  
+  const colors = ["#1565C0", "#C62828", "#2E7D32", "#F57C00"];
+  const randomColor = colors[Math.floor(Math.random() * colors.length)];
+  
+  let x, y, attempts = 0;
+  do {
+    x = 100 + Math.random() * (canvas.width - 280);
+    y = 100 + Math.random() * (canvas.height - 280);
+    attempts++;
+  } while (attempts < 50 && isColliding(x + 40, y + 40, 40));
+  
+  camps.push({
+    x: x,
+    y: y,
+    w: 80,
+    h: 80,
+    color: randomColor,
+    spawnTime: Date.now(),
+    duration: 12000 // 12 seconds
+  });
+  
+  console.log(`Spawned healing pad at (${x}, ${y})`);
+}
+
+// Start healing pad spawning
+let healingPadInterval = null;
+function startHealingPadSpawning() {
+  if (healingPadInterval) clearInterval(healingPadInterval);
+  
+  const scheduleNextPad = () => {
+    const delay = 10000 + Math.random() * 5000; // 10-15 seconds between pads
+    setTimeout(() => {
+      spawnHealingPad();
+      scheduleNextPad();
+    }, delay);
+  };
+  
+  // First pad after 8 seconds
+  setTimeout(() => {
+    spawnHealingPad();
+    scheduleNextPad();
+  }, 8000);
+}
+  
+  // First drop after 6 seconds
+  setTimeout(() => {
+    spawnDrop();
+    scheduleNextDrop();
+  }, 6000);
+}
+
+// Spawn one random healing pad
+        function spawnHealingPad() {
+          if (gameState !== "playing") return;
+          if (camps.length > 0) return; // Only one at a time
+          
+          const colors = ["#1565C0", "#C62828", "#2E7D32", "#F57C00"];
+          const randomColor = colors[Math.floor(Math.random() * colors.length)];
+          
+          let x, y, attempts = 0;
+          do {
+            x = 100 + Math.random() * (canvas.width - 280);
+            y = 100 + Math.random() * (canvas.height - 280);
+            attempts++;
+          } while (attempts < 50 && isColliding(x + 40, y + 40, 40));
+          
+          camps.push({
+            x: x,
+            y: y,
+            w: 80,
+            h: 80,
+            color: randomColor,
+            spawnTime: Date.now(),
+            duration: 12000 // 12 seconds
+          });
+          
+          console.log(`Spawned healing pad at (${x}, ${y})`);
+        }
+
+        // Start healing pad spawning
+        let healingPadInterval = null;
+        function startHealingPadSpawning() {
+          if (healingPadInterval) clearInterval(healingPadInterval);
+          
+          const scheduleNextPad = () => {
+            const delay = 10000 + Math.random() * 5000; // 10-15 seconds between pads
+            setTimeout(() => {
+              spawnHealingPad();
+              scheduleNextPad();
+            }, delay);
+          };
+          
+          // First pad after 8 seconds
+          setTimeout(() => {
+            spawnHealingPad();
+            scheduleNextPad();
+          }, 8000);
+        }
 
       function isColliding(x, y, r) {
         for (const obs of obstacles) {
@@ -434,7 +668,7 @@
         return false;
       }
 
-      // Start power-up spawning
+      // Start power-up spawning // DA RIMUOVERE MI SA DIOCA
       let powerUpInterval = null;
       function startPowerUpSpawning() {
         if (powerUpInterval) clearInterval(powerUpInterval);
@@ -498,7 +732,9 @@
             gameState = "playing";
             waitingScreen.style.display = "none";
             initEnvironment(currentMap);
-            startPowerUpSpawning();
+            startDropSpawning();
+            startArenaEvents();
+            startHealingPadSpawning();
 
             // Initialize players
             data.players.forEach((p, i) => {
@@ -553,16 +789,20 @@
           case "player_move":
             if (players[data.playerId]) {
               const char = CHARACTERS[players[data.playerId].character];
+              const player = players[data.playerId];
               let speedMod = 1;
               
-              // Check if player is in a zone
-              const player = players[data.playerId];
-              for (const zone of specialZones) {
-                if (isInZone(player, zone)) {
-                  if (zone.type === "speed") speedMod = 1.5;
-                  else if (zone.type === "slow") speedMod = 0.5;
-                }
+              // Check speed boost from drops
+              if (player.speedBoostEnd && Date.now() < player.speedBoostEnd) {
+                speedMod = 2;
               }
+              
+              // Check if frozen
+              if (player.frozen && player.frozen.canMove === false) {
+                speedMod = 0; // Can't move!
+              }
+    
+    // GRAVITY CHAOS: inversion handled on phone side
               
               // Dash ability
               if (player.abilityActive && CHARACTERS[player.character].ability.effect === "dash") {
@@ -585,6 +825,46 @@
               activateAbility(data.playerId);
             }
             break;
+
+                // ============ ADD THIS NEW CASE ============
+    case "player_action":
+      const player = players[data.playerId];
+      if (!player) break;
+      
+      if (data.action === 'blow') {
+        // Extinguish fire
+        if (player.onFire) {
+          delete player.onFire;
+          
+          ws.send(JSON.stringify({
+            type: 'player_status',
+            playerId: player.id,
+            status: 'clear',
+            message: '✅ Fire extinguished!'
+          }));
+          
+          console.log(`💨 Player ${player.id} extinguished fire`);
+        }
+      }
+      
+      if (data.action === 'shake') {
+        // Break free from freeze
+        if (player.frozen) {
+          delete player.frozen;
+          delete player.blizzardExposure;
+          
+          ws.send(JSON.stringify({
+            type: 'player_status',
+            playerId: player.id,
+            status: 'clear',
+            message: '✅ Broke free from ice!'
+          }));
+          
+          console.log(`📱 Player ${player.id} broke free from freeze`);
+        }
+      }
+      break;
+    // ============================================
 
           case "player_left":
             delete players[data.playerId];
@@ -871,11 +1151,126 @@
           player.vx *= 0.92;
           player.vy *= 0.92;
 
+          // ============ ARENA EVENT EFFECTS ============
+if (currentEvent) {
+  const eventAge = Date.now() - eventStartTime;
+  
+  if (currentEvent.type === 'INFERNO') {
+    // Check if player touches walls while event is active
+    let touchingWall = false;
+    
+    for (const obs of obstacles) {
+      const closestX = Math.max(obs.x, Math.min(player.x, obs.x + obs.w));
+      const closestY = Math.max(obs.y, Math.min(player.y, obs.y + obs.h));
+      const dx = player.x - closestX;
+      const dy = player.y - closestY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      
+      if (dist < player.r + 15) { // Close to wall
+        touchingWall = true;
+        break;
+      }
+    }
+    
+    if (touchingWall && !player.onFire) {
+      // Catch fire!
+      player.onFire = {
+        startTime: Date.now(),
+        damage: 8 // DPS
+      };
+      
+      // Notify player
+      ws.send(JSON.stringify({
+        type: 'player_status',
+        playerId: player.id,
+        status: 'on_fire',
+        message: '🔥 YOU ARE ON FIRE! BLOW TO EXTINGUISH!'
+      }));
+    }
+  }
+  
+  if (currentEvent.type === 'BLIZZARD') {
+    // Check if player is NOT protected by walls
+    let protectedByWall = false;
+    
+    // Blizzard comes from the left side
+    const blizzardOriginX = 0;
+    const blizzardOriginY = canvas.height / 2;
+    
+    // Check if any wall blocks the blizzard path to player
+    for (const obs of obstacles) {
+      // Simple check: is obstacle between player and blizzard origin?
+      if (obs.x < player.x && obs.x + obs.w > blizzardOriginX) {
+        if (obs.y < player.y && obs.y + obs.h > player.y) {
+          protectedByWall = true;
+          break;
+        }
+      }
+    }
+    
+    if (!protectedByWall) {
+      // Exposed to blizzard
+      if (!player.blizzardExposure) {
+        player.blizzardExposure = 0;
+      }
+      player.blizzardExposure += 1;
+      
+      // After 3 seconds of exposure (180 frames), freeze
+      if (player.blizzardExposure > 180 && !player.frozen) {
+        player.frozen = {
+          startTime: Date.now(),
+          canMove: false
+        };
+        
+        ws.send(JSON.stringify({
+          type: 'player_status',
+          playerId: player.id,
+          status: 'frozen',
+          message: '❄️ YOU ARE FROZEN! SHAKE TO BREAK FREE!'
+        }));
+      }
+    } else {
+      // Protected - slowly reduce exposure
+      if (player.blizzardExposure) {
+        player.blizzardExposure = Math.max(0, player.blizzardExposure - 2);
+      }
+    }
+    
+    // If frozen, can't move
+    if (player.frozen && player.frozen.canMove === false) {
+      player.vx = 0;
+      player.vy = 0;
+    }
+  }
+  
+  if (currentEvent.type === 'GRAVITY_CHAOS') {
+    // Controls are already inverted on phone side
+    // No additional PC logic needed
+  }
+}
+
+// Apply fire damage (persists even after event ends)
+if (player.onFire) {
+  player.health -= player.onFire.damage / 60; // Per frame
+  
+  // Visual indication needed
+}
+
+// Check if player speed boost is active
+if (player.speedBoostEnd && Date.now() < player.speedBoostEnd) {
+  // Speed boost active - handled in movement multiplier check
+}
+
           // Camp healing
-          camps.forEach(camp => {
+          // Camp healing - remove expired camps
+          camps = camps.filter(camp => {
+            const age = Date.now() - camp.spawnTime;
+            if (age > camp.duration) return false; // Remove expired
+            
             if (isInZone(player, camp)) {
               player.health = Math.min(player.maxHealth, player.health + 0.5);
             }
+            return true;
           });
 
           // Special zone effects
@@ -895,43 +1290,46 @@
           });
 
           // Power-up collection
-          powerUps = powerUps.filter(powerUp => {
-            const dx = player.x - powerUp.x;
-            const dy = player.y - powerUp.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            
-            if (dist < player.r + powerUp.radius) {
-              // Check if colors match
-              const playerColor = CHARACTERS[player.character].color;
-              if (playerColor === powerUp.color) {
-                // Recharge ability ONLY if colors match
-                player.abilityCooldown = 0;
-                
-                // Notify player with success
-                ws.send(JSON.stringify({
-                  type: "game_update",
-                  players: [{ 
-                    id: player.id, 
-                    abilityCooldown: 0, 
-                    powerUpCollected: true,
-                    powerUpSuccess: true 
-                  }]
-                }));
-              } else {
-                // Wrong color - notify player (no effect)
-                ws.send(JSON.stringify({
-                  type: "game_update",
-                  players: [{ 
-                    id: player.id, 
-                    powerUpCollected: true,
-                    powerUpSuccess: false 
-                  }]
-                }));
-              }
-              return false; // Remove power-up regardless
-            }
-            return true;
-          });
+// Drop collection
+activeDrops = activeDrops.filter(drop => {
+  const dx = player.x - drop.x;
+  const dy = player.y - drop.y;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  
+  if (dist < player.r + drop.radius) {
+    // Apply drop effect
+    switch (drop.effect) {
+      case 'recharge_ability':
+        player.abilityCooldown = 0;
+        break;
+      case 'speed_boost':
+        player.speedBoostEnd = Date.now() + drop.boostDuration;
+        break;
+      case 'heal':
+        player.health = Math.min(player.maxHealth, player.health + drop.healAmount);
+        break;
+    }
+    
+    // Notify player
+    ws.send(JSON.stringify({
+      type: 'game_update',
+      players: [{ 
+        id: player.id, 
+        abilityCooldown: player.abilityCooldown,
+        health: player.health,
+        dropCollected: drop.type
+      }]
+    }));
+    
+    if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
+    
+    return false; // Remove drop
+  }
+  
+  // Remove expired drops
+  const age = Date.now() - drop.spawnTime;
+  return age < drop.duration;
+});
         });
 
         // Update bullets
@@ -1091,11 +1489,19 @@
         });
 
         // Draw obstacles
+        // Draw obstacles
         obstacles.forEach(obs => {
           ctx.fillStyle = obs.color;
           ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
-          ctx.strokeStyle = "#546E7A";
-          ctx.lineWidth = 2;
+          
+          // Change border color during Inferno
+          if (currentEvent && currentEvent.type === 'INFERNO') {
+            ctx.strokeStyle = "#FF0000"; // Red border during fire event
+            ctx.lineWidth = 3;
+          } else {
+            ctx.strokeStyle = "#546E7A"; // Normal grey border
+            ctx.lineWidth = 2;
+          }
           ctx.strokeRect(obs.x, obs.y, obs.w, obs.h);
 
           // Texture
@@ -1106,49 +1512,42 @@
         });
 
         // Draw power-ups
-        powerUps.forEach(powerUp => {
-          const age = Date.now() - powerUp.spawnTime;
-          const pulse = 1 + Math.sin(age / 200) * 0.2;
-          const alpha = age > POWERUP_DURATION - 3000 ? Math.sin(age / 100) * 0.5 + 0.5 : 1;
-          
-          ctx.globalAlpha = alpha;
-          
-          // Glow
-          ctx.shadowColor = powerUp.color;
-          ctx.shadowBlur = 20;
-          
-          // Outer ring
-          ctx.strokeStyle = powerUp.color;
-          ctx.lineWidth = 3;
-          ctx.beginPath();
-          ctx.arc(powerUp.x, powerUp.y, powerUp.radius * pulse, 0, Math.PI * 2);
-          ctx.stroke();
-          
-          // Inner fill
-          ctx.fillStyle = powerUp.color + "60";
-          ctx.beginPath();
-          ctx.arc(powerUp.x, powerUp.y, powerUp.radius * pulse * 0.7, 0, Math.PI * 2);
-          ctx.fill();
-          
-          // Show ability icon of matching character
-          ctx.fillStyle = "#fff";
-          ctx.font = "16px Arial";
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-          
-          // Find which character has this color and show their ability icon
-          let abilityIcon = "🔋"; // Default
-          for (const [key, char] of Object.entries(CHARACTERS)) {
-            if (char.color === powerUp.color) {
-              abilityIcon = char.ability.icon;
-              break;
-            }
-          }
-          ctx.fillText(abilityIcon, powerUp.x, powerUp.y);
-          
-          ctx.shadowBlur = 0;
-          ctx.globalAlpha = 1;
-        });
+        // Draw drops
+activeDrops.forEach(drop => {
+  const age = Date.now() - drop.spawnTime;
+  const pulse = 1 + Math.sin(age / 200) * 0.2;
+  const alpha = age > drop.duration - 2000 ? Math.sin(age / 100) * 0.5 + 0.5 : 1;
+  
+  ctx.globalAlpha = alpha;
+  
+  // Glow
+  ctx.shadowColor = drop.color;
+  ctx.shadowBlur = 20;
+  
+  // Outer ring
+  ctx.strokeStyle = drop.color;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(drop.x, drop.y, drop.radius * pulse, 0, Math.PI * 2);
+  ctx.stroke();
+  
+  // Inner fill
+  ctx.fillStyle = drop.color + '60';
+  ctx.beginPath();
+  ctx.arc(drop.x, drop.y, drop.radius * pulse * 0.7, 0, Math.PI * 2);
+  ctx.fill();
+  
+  // Icon
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 20px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(drop.icon, drop.x, drop.y);
+  
+  ctx.globalAlpha = 1;
+});
+ctx.shadowBlur = 0;
 
         // Draw bullets
         bullets.forEach(bullet => {
@@ -1170,6 +1569,89 @@
           }
         });
         ctx.shadowBlur = 0;
+
+        // ============ EVENT VISUAL EFFECTS ============
+if (currentEvent) {
+  const map = MAPS[currentMap];
+  
+  // Background tint
+  ctx.fillStyle = currentEvent.backgroundTint;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  if (currentEvent.type === 'INFERNO') {
+    // Tint obstacles red
+    obstacles.forEach(obs => {
+      ctx.fillStyle = currentEvent.wallColor + '40';
+      ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+    });
+    
+    // Flame particles
+    for (let i = 0; i < 20; i++) {
+      const x = Math.random() * canvas.width;
+      const y = canvas.height - (Date.now() / 10 + i * 50) % canvas.height;
+      const size = 5 + Math.random() * 10;
+      
+      ctx.fillStyle = `rgba(255, ${100 + Math.random() * 100}, 0, 0.6)`;
+      ctx.beginPath();
+      ctx.arc(x, y, size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  
+  if (currentEvent.type === 'BLIZZARD') {
+    // Tint obstacles blue
+    obstacles.forEach(obs => {
+      ctx.fillStyle = currentEvent.wallColor + '40';
+      ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+    });
+    
+    // Snow particles from left
+    for (let i = 0; i < 100; i++) {
+      const windSpeed = 3;
+      const x = ((Date.now() / 20) * windSpeed + i * 30) % (canvas.width + 100) - 100;
+      const y = (i * 17) % canvas.height;
+      
+      ctx.fillStyle = currentEvent.particleColor;
+      ctx.fillRect(x, y, 3, 8);
+    }
+  }
+  
+  if (currentEvent.type === 'GRAVITY_CHAOS') {
+    // Distorted grid
+    ctx.strokeStyle = currentEvent.gridColor;
+    ctx.lineWidth = 2;
+    const waveOffset = Math.sin(Date.now() / 200) * 20;
+    
+    for (let i = 0; i < canvas.width; i += 50) {
+      ctx.beginPath();
+      ctx.moveTo(i + waveOffset, 0);
+      ctx.lineTo(i - waveOffset, canvas.height);
+      ctx.stroke();
+    }
+    
+    // Tint obstacles purple
+    obstacles.forEach(obs => {
+      ctx.fillStyle = currentEvent.wallColor + '30';
+      ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+    });
+  }
+  
+  // Event timer bar at top
+  const eventAge = Date.now() - eventStartTime;
+  const timeLeft = currentEvent.duration - eventAge;
+  const progress = timeLeft / currentEvent.duration;
+  
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+  ctx.fillRect(canvas.width/2 - 200, 10, 400, 30);
+  
+  ctx.fillStyle = '#ff4500';
+  ctx.fillRect(canvas.width/2 - 195, 15, 390 * progress, 20);
+  
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 16px Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText(`${currentEvent.icon} ${currentEvent.name} - ${Math.ceil(timeLeft/1000)}s`, canvas.width/2, 28);
+}
 
         // Draw players
         Object.values(players).forEach(player => {
@@ -1244,6 +1726,43 @@
             ctx.stroke();
             ctx.setLineDash([]);
           }
+
+          // Fire effect
+if (player.onFire) {
+  for (let i = 0; i < 5; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const dist = player.r + Math.random() * 10;
+    const fx = player.x + Math.cos(angle) * dist;
+    const fy = player.y + Math.sin(angle) * dist - Math.random() * 20;
+    
+    ctx.fillStyle = `rgba(255, ${100 + Math.random() * 100}, 0, ${0.5 + Math.random() * 0.5})`;
+    ctx.beginPath();
+    ctx.arc(fx, fy, 3 + Math.random() * 4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+// Frozen effect
+if (player.frozen) {
+  ctx.strokeStyle = '#00BFFF';
+  ctx.lineWidth = 4;
+  ctx.shadowColor = '#00BFFF';
+  ctx.shadowBlur = 15;
+  
+  // Ice crystal shape
+  for (let i = 0; i < 6; i++) {
+    const angle = (Math.PI / 3) * i;
+    ctx.beginPath();
+    ctx.moveTo(player.x, player.y);
+    ctx.lineTo(
+      player.x + Math.cos(angle) * (player.r + 10),
+      player.y + Math.sin(angle) * (player.r + 10)
+    );
+    ctx.stroke();
+  }
+  
+  ctx.shadowBlur = 0;
+}
 
           // Draw player shape
           ctx.fillStyle = char.color;
