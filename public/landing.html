@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GEO-SHOOTER</title>
+
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: "Segoe UI", sans-serif;
+      }
+
+      body {
+        height: 100vh;
+        background: radial-gradient(circle at top, #1a1f3a, #0a0e27);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+      }
+
+      .container {
+        text-align: center;
+        padding: 3rem;
+        background: rgba(0, 0, 0, 0.45);
+        border-radius: 20px;
+        border: 2px solid #ff4500;
+        box-shadow: 0 0 30px rgba(255, 69, 0, 0.4);
+        max-width: 420px;
+        width: 90%;
+      }
+
+      h1 {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+        color: #ff6b35;
+        text-shadow: 0 0 15px rgba(255, 69, 0, 0.6);
+      }
+
+      p {
+        color: #ccc;
+        margin-bottom: 2rem;
+      }
+
+      .btn {
+        display: block;
+        margin: 1rem auto;
+        padding: 1rem;
+        width: 100%;
+        max-width: 300px;
+        font-size: 1.1rem;
+        font-weight: bold;
+        text-decoration: none;
+        color: white;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #ff4500, #ff6b35);
+        box-shadow: 0 4px 15px rgba(255, 69, 0, 0.4);
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+
+      .btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(255, 69, 0, 0.6);
+      }
+
+      .hint {
+        margin-top: 1.5rem;
+        font-size: 0.85rem;
+        color: #aaa;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>⚔️ GEO-SHOOTER</h1>
+      <p>Multiplayer phone-controlled battle arena</p>
+
+      <a href="/pc" class="btn">🖥️ Open Game Display</a>
+      <a href="/phone" class="btn">📱 Join as Player</a>
+
+      <div class="hint">
+        Open the display on a computer<br />
+        Join using your phone
+      </div>
+    </div>
+  </body>
+</html>

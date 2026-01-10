@@ -1,0 +1,1910 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GEO-SHOOTER - Battle Arena</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Arial", sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #0a0e27, #1a1f3a);
+        color: #fff;
+        overflow: hidden;
+      }
+
+      h1 {
+        margin: 15px 0;
+        font-size: 2.5em;
+        text-shadow: 0 0 20px rgba(255, 69, 0, 0.8);
+        letter-spacing: 2px;
+      }
+
+      #controls {
+        margin-bottom: 10px;
+        display: flex;
+        gap: 15px;
+        align-items: center;
+        background: rgba(0, 0, 0, 0.5);
+        padding: 15px 25px;
+        border-radius: 10px;
+        box-shadow: 0 0 30px rgba(255, 69, 0, 0.3);
+      }
+
+      input#room {
+        padding: 10px 15px;
+        border-radius: 8px;
+        border: 2px solid #ff4500;
+        outline: none;
+        font-size: 1em;
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+        transition: all 0.3s;
+      }
+
+      input#room:focus {
+        border-color: #ff6b35;
+        box-shadow: 0 0 15px rgba(255, 69, 0, 0.5);
+      }
+
+      select#mapSelect {
+        padding: 10px 15px;
+        border-radius: 8px;
+        border: 2px solid #ff4500;
+        outline: none;
+        font-size: 1em;
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+        cursor: pointer;
+      }
+
+      button#connectBtn {
+        padding: 10px 20px;
+        font-size: 1em;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        background: linear-gradient(135deg, #ff4500, #ff6b35);
+        color: #fff;
+        font-weight: bold;
+        transition: all 0.3s;
+        box-shadow: 0 4px 15px rgba(255, 69, 0, 0.4);
+      }
+
+      button#connectBtn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(255, 69, 0, 0.6);
+      }
+
+      #status {
+        font-weight: bold;
+        font-size: 1.1em;
+        text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+      }
+
+      #gameContainer {
+        position: relative;
+      }
+
+      canvas {
+        background: linear-gradient(180deg, #0a0e1a, #1a1f2e);
+        border-radius: 15px;
+        box-shadow: 0 0 50px rgba(255, 69, 0, 0.4),
+          inset 0 0 50px rgba(0, 0, 0, 0.5);
+        display: block;
+      }
+
+      #waitingScreen {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        background: rgba(0, 0, 0, 0.8);
+        padding: 40px 60px;
+        border-radius: 20px;
+        border: 3px solid #ff4500;
+        box-shadow: 0 0 40px rgba(255, 69, 0, 0.6);
+      }
+
+      #waitingScreen h2 {
+        font-size: 2em;
+        margin-bottom: 20px;
+        color: #ff6b35;
+        text-shadow: 0 0 15px rgba(255, 69, 0, 0.8);
+      }
+
+      #waitingScreen p {
+        font-size: 1.2em;
+        margin: 10px 0;
+      }
+
+      .map-preview {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+        justify-content: center;
+      }
+
+      .map-preview canvas {
+        width: 80px;
+        height: 50px;
+        border: 2px solid #333;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+
+      .map-preview canvas.active {
+        border-color: #ff4500;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>⚔️ GEO-SHOOTER</h1>
+
+    <div id="controls">
+      <input id="room" placeholder="Enter Room ID" value="war123" />
+      <select id="mapSelect">
+        <option value="arena">🏟️ Arena</option>
+        <option value="maze">🌀 Maze</option>
+        <option value="fortress">🏰 Fortress</option>
+        <option value="chaos">💥 Chaos</option>
+      </select>
+      <button id="connectBtn">Connect</button>
+      <span id="status">Not connected</span>
+    </div>
+
+    <div id="gameContainer">
+      <canvas id="gameCanvas" width="1200" height="700"></canvas>
+      <div id="waitingScreen">
+        <h2>⏳ Waiting for players...</h2>
+        <p id="playerCount">0 players connected</p>
+        <p id="readyStatus">Waiting for character selection</p>
+        <p id="mapInfo" style="color: #ff6b35; margin-top: 10px">Map: Arena</p>
+      </div>
+
+      <audio id="bg-music" src="/sounds/bg-music.mp3" loop></audio>
+      <audio id="fire-sound" src="/sounds/laser-gunfire.mp3"></audio>
+      <audio id="powerup-sound" src="/sounds/powerup.mp3"></audio>
+      <audio id="player-respawn-sound" src="/sounds/player-respawn.mp3"></audio>
+      <audio id="player-joined-sound" src="/sounds/player-joined.mp3"></audio>
+      <audio id="move-over-item-sound" src="/sounds/move-over-item.mp3"></audio>
+    </div>
+
+    <script>
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("2d");
+      const waitingScreen = document.getElementById("waitingScreen");
+      const playerCountEl = document.getElementById("playerCount");
+      const readyStatusEl = document.getElementById("readyStatus");
+      const mapInfoEl = document.getElementById("mapInfo");
+
+      let ws, roomId;
+      let gameState = "waiting"; // waiting, playing, ended
+      let players = {}; // { playerId: { x, y, character, health, kills, deaths, lives, bullets, vx, vy, lastShot, ability } }
+      let bullets = [];
+      let obstacles = [];
+      let camps = [];
+      let specialZones = [];
+      let powerUps = [];
+      let currentMap = "arena";
+
+      const MAX_LIVES = 3;
+      const POWERUP_SPAWN_INTERVAL = 15000; // 15 seconds
+      const POWERUP_DURATION = 10000; // 10 seconds on map
+
+      // Character definitions with unique abilities
+      const CHARACTERS = {
+        TANK: {
+          name: "Tank",
+          color: "#4CAF50",
+          stats: {
+            speed: 2,
+            health: 150,
+            damage: 35,
+            fireRate: 1.5,
+            bulletSpeed: 8,
+          },
+          spider: {
+            speed: 20,
+            health: 95,
+            damage: 70,
+            fireRate: 35,
+            defense: 80,
+          },
+          ability: {
+            name: "Shield",
+            icon: "🛡️",
+            cooldown: 12000,
+            duration: 3000,
+            effect: "shield", // Absorbs all damage
+          },
+        },
+        SNIPER: {
+          name: "Sniper",
+          color: "#2196F3",
+          stats: {
+            speed: 4,
+            health: 80,
+            damage: 60,
+            fireRate: 2.5,
+            bulletSpeed: 15,
+          },
+          spider: {
+            speed: 70,
+            health: 30,
+            damage: 100,
+            fireRate: 25,
+            defense: 75,
+          },
+          ability: {
+            name: "Piercing Shot",
+            icon: "🎯",
+            cooldown: 10000,
+            duration: 0,
+            effect: "pierce", // Next shot goes through walls
+          },
+        },
+        RUNNER: {
+          name: "Runner",
+          color: "#FFC107",
+          stats: {
+            speed: 7,
+            health: 70,
+            damage: 15,
+            fireRate: 0.3,
+            bulletSpeed: 10,
+          },
+          spider: {
+            speed: 100,
+            health: 40,
+            damage: 30,
+            fireRate: 100,
+            defense: 30,
+          },
+          ability: {
+            name: "Dash",
+            icon: "💨",
+            cooldown: 6000,
+            duration: 300,
+            effect: "dash", // Super speed + invincibility
+          },
+        },
+        BALANCED: {
+          name: "Balanced",
+          color: "#9C27B0",
+          stats: {
+            speed: 4.5,
+            health: 100,
+            damage: 25,
+            fireRate: 0.8,
+            bulletSpeed: 10,
+          },
+          spider: {
+            speed: 60,
+            health: 60,
+            damage: 60,
+            fireRate: 60,
+            defense: 60,
+          },
+          ability: {
+            name: "Heal Burst",
+            icon: "💚",
+            cooldown: 15000,
+            duration: 0,
+            effect: "heal", // Instant heal 30%
+          },
+        },
+        ASSAULT: {
+          name: "Assault",
+          color: "#FF5722",
+          stats: {
+            speed: 5,
+            health: 90,
+            damage: 30,
+            fireRate: 0.5,
+            bulletSpeed: 12,
+          },
+          spider: {
+            speed: 70,
+            health: 50,
+            damage: 65,
+            fireRate: 75,
+            defense: 40,
+          },
+          ability: {
+            name: "Triple Shot",
+            icon: "🔥",
+            cooldown: 8000,
+            duration: 0,
+            effect: "triple", // Fires 3 bullets in spread
+          },
+        },
+      };
+
+      // Map configurations
+      const MAPS = {
+        arena: {
+          name: "Arena",
+          background: "#0a0e1a",
+          gridColor: "rgba(255, 255, 255, 0.05)",
+          generateObstacles: () => {
+            const obs = [];
+            // Central structure
+            obs.push({
+              x: canvas.width / 2 - 75,
+              y: canvas.height / 2 - 75,
+              w: 150,
+              h: 150,
+              color: "#37474F",
+            });
+            // Corner walls
+            obs.push({ x: 200, y: 150, w: 100, h: 20, color: "#37474F" });
+            obs.push({ x: 900, y: 150, w: 100, h: 20, color: "#37474F" });
+            obs.push({ x: 200, y: 530, w: 100, h: 20, color: "#37474F" });
+            obs.push({ x: 900, y: 530, w: 100, h: 20, color: "#37474F" });
+            // Side walls
+            obs.push({ x: 400, y: 250, w: 20, h: 100, color: "#37474F" });
+            obs.push({ x: 780, y: 350, w: 20, h: 100, color: "#37474F" });
+            return obs;
+          },
+          generateZones: () => [
+            {
+              x: canvas.width / 2 - 40,
+              y: 50,
+              w: 80,
+              h: 80,
+              type: "speed",
+              color: "#00BCD4",
+            },
+            {
+              x: canvas.width / 2 - 40,
+              y: canvas.height - 130,
+              w: 80,
+              h: 80,
+              type: "speed",
+              color: "#00BCD4",
+            },
+          ],
+        },
+        maze: {
+          name: "Maze",
+          background: "#0d1117",
+          gridColor: "rgba(100, 255, 100, 0.03)",
+          generateObstacles: () => {
+            const obs = [];
+            // Horizontal walls
+            for (let i = 0; i < 4; i++) {
+              obs.push({
+                x: 150 + i * 250,
+                y: 180,
+                w: 150,
+                h: 20,
+                color: "#2d5a27",
+              });
+              obs.push({
+                x: 100 + i * 250,
+                y: 500,
+                w: 150,
+                h: 20,
+                color: "#2d5a27",
+              });
+            }
+            // Vertical walls
+            for (let i = 0; i < 3; i++) {
+              obs.push({
+                x: 300 + i * 300,
+                y: 250,
+                w: 20,
+                h: 200,
+                color: "#2d5a27",
+              });
+            }
+            return obs;
+          },
+          generateZones: () => [
+            {
+              x: 50,
+              y: canvas.height / 2 - 40,
+              w: 80,
+              h: 80,
+              type: "damage",
+              color: "#F44336",
+            },
+            {
+              x: canvas.width - 130,
+              y: canvas.height / 2 - 40,
+              w: 80,
+              h: 80,
+              type: "damage",
+              color: "#F44336",
+            },
+            {
+              x: canvas.width / 2 - 40,
+              y: canvas.height / 2 - 40,
+              w: 80,
+              h: 80,
+              type: "heal",
+              color: "#4CAF50",
+            },
+          ],
+        },
+        fortress: {
+          name: "Fortress",
+          background: "#1a1510",
+          gridColor: "rgba(255, 200, 100, 0.03)",
+          generateObstacles: () => {
+            const obs = [];
+            // Outer walls
+            obs.push({ x: 100, y: 100, w: 300, h: 30, color: "#5d4e37" });
+            obs.push({
+              x: canvas.width - 400,
+              y: 100,
+              w: 300,
+              h: 30,
+              color: "#5d4e37",
+            });
+            obs.push({
+              x: 100,
+              y: canvas.height - 130,
+              w: 300,
+              h: 30,
+              color: "#5d4e37",
+            });
+            obs.push({
+              x: canvas.width - 400,
+              y: canvas.height - 130,
+              w: 300,
+              h: 30,
+              color: "#5d4e37",
+            });
+            // Inner fortress
+            obs.push({
+              x: canvas.width / 2 - 100,
+              y: canvas.height / 2 - 100,
+              w: 200,
+              h: 30,
+              color: "#8b7355",
+            });
+            obs.push({
+              x: canvas.width / 2 - 100,
+              y: canvas.height / 2 + 70,
+              w: 200,
+              h: 30,
+              color: "#8b7355",
+            });
+            obs.push({
+              x: canvas.width / 2 - 100,
+              y: canvas.height / 2 - 70,
+              w: 30,
+              h: 140,
+              color: "#8b7355",
+            });
+            obs.push({
+              x: canvas.width / 2 + 70,
+              y: canvas.height / 2 - 70,
+              w: 30,
+              h: 140,
+              color: "#8b7355",
+            });
+            return obs;
+          },
+          generateZones: () => [
+            {
+              x: canvas.width / 2 - 30,
+              y: canvas.height / 2 - 30,
+              w: 60,
+              h: 60,
+              type: "heal",
+              color: "#4CAF50",
+            },
+            {
+              x: 150,
+              y: canvas.height / 2 - 40,
+              w: 80,
+              h: 80,
+              type: "slow",
+              color: "#9E9E9E",
+            },
+            {
+              x: canvas.width - 230,
+              y: canvas.height / 2 - 40,
+              w: 80,
+              h: 80,
+              type: "slow",
+              color: "#9E9E9E",
+            },
+          ],
+        },
+        chaos: {
+          name: "Chaos",
+          background: "#1a0a0a",
+          gridColor: "rgba(255, 50, 50, 0.03)",
+          generateObstacles: () => {
+            const obs = [];
+            // Random procedural obstacles
+            const seed = Date.now();
+            const random = (i) =>
+              ((seed * (i + 1) * 9301 + 49297) % 233280) / 233280;
+
+            for (let i = 0; i < 12; i++) {
+              const x = 100 + random(i) * (canvas.width - 250);
+              const y = 100 + random(i + 100) * (canvas.height - 250);
+              const w = 40 + random(i + 200) * 80;
+              const h = 20 + random(i + 300) * 60;
+
+              // Avoid spawn corners
+              if (
+                (x < 200 && y < 200) ||
+                (x > canvas.width - 250 && y < 200) ||
+                (x < 200 && y > canvas.height - 250) ||
+                (x > canvas.width - 250 && y > canvas.height - 250)
+              ) {
+                continue;
+              }
+
+              obs.push({ x, y, w, h, color: "#4a1a1a" });
+            }
+            return obs;
+          },
+          generateZones: () => {
+            const zones = [];
+            const types = ["speed", "damage", "heal", "slow"];
+            for (let i = 0; i < 4; i++) {
+              zones.push({
+                x: 200 + i * 220,
+                y: 300 + (i % 2) * 100,
+                w: 60,
+                h: 60,
+                type: types[i],
+                color:
+                  types[i] === "speed"
+                    ? "#00BCD4"
+                    : types[i] === "damage"
+                    ? "#F44336"
+                    : types[i] === "heal"
+                    ? "#4CAF50"
+                    : "#9E9E9E",
+              });
+            }
+            return zones;
+          },
+        },
+      };
+
+      // SOUNDS SETUP
+      const bgMusic = document.getElementById("bg-music");
+      bgMusic.volume = 0.4;
+
+      function startBackgroundMusic() {
+        bgMusic.play().catch(() => {
+          console.log("Autoplay blocked — waiting for user interaction");
+        });
+      }
+
+      const fireSound = document.getElementById("fire-sound");
+
+      function playFireSound() {
+        fireSound.currentTime = 0;
+        fireSound.play();
+      }
+
+      const playerActivateAbility = document.getElementById("powerup-sound");
+
+      function playActivateAbility() {
+        playerActivateAbility.currentTime = 0;
+        playerActivateAbility.play();
+      }
+
+      const playerRespawned = document.getElementById("player-respawn-sound");
+
+      function playRespawnSound() {
+        playerRespawned.currentTime = 0;
+        playerRespawned.play();
+      }
+      const playerJoined = document.getElementById("player-joined-sound");
+
+      function playPlayerJoinedSound() {
+        playerJoined.currentTime = 0;
+        playerJoined.play();
+      }
+
+      const moveOverItem = document.getElementById("move-over-item-sound");
+
+      function playMoveOverItemSound() {
+        moveOverItem.currentTime = 0;
+        moveOverItem.play();
+      }
+      // SOUND SETUP END
+
+      // Initialize environment based on map
+      function initEnvironment(mapKey = "arena") {
+        currentMap = mapKey;
+        const map = MAPS[mapKey];
+
+        obstacles = map.generateObstacles();
+        specialZones = map.generateZones();
+
+        // Healing camps in corners (always present)
+        camps = [
+          { x: 50, y: 50, w: 80, h: 80, color: "#1565C0" },
+          { x: canvas.width - 130, y: 50, w: 80, h: 80, color: "#C62828" },
+          { x: 50, y: canvas.height - 130, w: 80, h: 80, color: "#2E7D32" },
+          {
+            x: canvas.width - 130,
+            y: canvas.height - 130,
+            w: 80,
+            h: 80,
+            color: "#F57C00",
+          },
+        ];
+
+        powerUps = [];
+
+        mapInfoEl.textContent = `Map: ${map.name}`;
+      }
+
+      // Spawn power-up for ability recharge
+      function spawnPowerUp() {
+        if (gameState !== "playing") return;
+
+        const playerColors = Object.values(players).map(
+          (p) => CHARACTERS[p.character].color
+        );
+        if (playerColors.length === 0) return;
+
+        // Pick a random player's color
+        const color =
+          playerColors[Math.floor(Math.random() * playerColors.length)];
+
+        // Find safe spawn location
+        let x,
+          y,
+          attempts = 0;
+        do {
+          x = 100 + Math.random() * (canvas.width - 200);
+          y = 100 + Math.random() * (canvas.height - 200);
+          attempts++;
+        } while (attempts < 50 && isColliding(x, y, 20));
+
+        powerUps.push({
+          x,
+          y,
+          color,
+          spawnTime: Date.now(),
+          radius: 20,
+        });
+      }
+
+      function isColliding(x, y, r) {
+        for (const obs of obstacles) {
+          if (checkCollision({ x, y, r }, obs)) return true;
+        }
+        return false;
+      }
+
+      // Start power-up spawning
+      let powerUpInterval = null;
+      function startPowerUpSpawning() {
+        if (powerUpInterval) clearInterval(powerUpInterval);
+        powerUpInterval = setInterval(spawnPowerUp, POWERUP_SPAWN_INTERVAL);
+        // Spawn first one after 5 seconds
+        setTimeout(spawnPowerUp, 5000);
+      }
+
+      initEnvironment();
+
+      // Map selection
+      document.getElementById("mapSelect").onchange = (e) => {
+        initEnvironment(e.target.value);
+      };
+
+      document.getElementById("connectBtn").onclick = () => {
+        roomId = document.getElementById("room").value.trim() || "war123";
+        currentMap = document.getElementById("mapSelect").value;
+
+        const serverUrl =
+          (window.location.protocol === "https:" ? "wss://" : "ws://") +
+          window.location.host;
+
+        ws = new WebSocket(serverUrl);
+
+        ws.onopen = () => {
+          ws.send(
+            JSON.stringify({
+              type: "join",
+              role: "pc",
+              room: roomId,
+              map: currentMap,
+            })
+          );
+          const status = document.getElementById("status");
+          status.textContent = "Connected ✅";
+          status.style.color = "#00ff88";
+        };
+
+        ws.onmessage = (e) => {
+          try {
+            const data = JSON.parse(e.data);
+            handleServerMessage(data);
+          } catch (err) {
+            console.error("Error:", err);
+          }
+        };
+
+        ws.onclose = () => {
+          document.getElementById("status").textContent = "Disconnected ❌";
+          document.getElementById("status").style.color = "#ff4444";
+          gameState = "waiting";
+          waitingScreen.style.display = "block";
+        };
+      };
+
+      function handleServerMessage(data) {
+        switch (data.type) {
+          case "player_joined":
+            playerCountEl.textContent = `${data.totalPlayers} player${
+              data.totalPlayers > 1 ? "s" : ""
+            } connected`;
+            playPlayerJoinedSound();
+            break;
+
+          case "character_selected":
+            readyStatusEl.textContent = `${data.playerId.slice(-4)} selected ${
+              data.character
+            }`;
+            break;
+
+          case "game_start":
+            gameState = "playing";
+            waitingScreen.style.display = "none";
+            initEnvironment(currentMap);
+            startPowerUpSpawning();
+            startBackgroundMusic();
+
+            // Initialize players
+            data.players.forEach((p, i) => {
+              const spawnPoints = [
+                { x: 100, y: 100 },
+                { x: canvas.width - 100, y: 100 },
+                { x: 100, y: canvas.height - 100 },
+                { x: canvas.width - 100, y: canvas.height - 100 },
+              ];
+              const spawn = spawnPoints[i % 4];
+              const char = CHARACTERS[p.character];
+
+              players[p.id] = {
+                id: p.id,
+                x: spawn.x,
+                y: spawn.y,
+                vx: 0,
+                vy: 0,
+                r: 20,
+                character: p.character,
+                health: char.stats.health,
+                maxHealth: char.stats.health,
+                kills: 0,
+                deaths: 0,
+                lives: MAX_LIVES,
+                lastShot: 0,
+                lastHitBy: null,
+                isRespawning: false,
+                // Ability state
+                abilityCooldown: 0,
+                abilityActive: false,
+                abilityEndTime: 0,
+                pierceNextShot: false,
+                dashDirection: { x: 0, y: 0 },
+              };
+            });
+
+            // Notify phones that game started with map info
+            ws.send(
+              JSON.stringify({
+                type: "game_update",
+                players: Object.values(players).map((p) => ({
+                  id: p.id,
+                  lives: p.lives,
+                  health: p.health,
+                  maxHealth: p.maxHealth,
+                  abilityCooldown: p.abilityCooldown,
+                  abilityActive: p.abilityActive,
+                })),
+              })
+            );
+            break;
+
+          case "player_move":
+            if (players[data.playerId]) {
+              const char = CHARACTERS[players[data.playerId].character];
+              let speedMod = 1;
+
+              // Check if player is in a zone
+              const player = players[data.playerId];
+              for (const zone of specialZones) {
+                if (isInZone(player, zone)) {
+                  playMoveOverItemSound();
+                  if (zone.type === "speed") speedMod = 1.5;
+                  else if (zone.type === "slow") speedMod = 0.5;
+                }
+              }
+
+              // Dash ability
+              if (
+                player.abilityActive &&
+                CHARACTERS[player.character].ability.effect === "dash"
+              ) {
+                speedMod = 4;
+              }
+
+              players[data.playerId].vx =
+                -data.ax * char.stats.speed * 0.15 * speedMod;
+              players[data.playerId].vy =
+                data.ay * char.stats.speed * 0.15 * speedMod;
+            }
+            break;
+
+          case "player_shoot":
+            if (players[data.playerId]) {
+              shoot(data.playerId);
+              playFireSound();
+            }
+            break;
+
+          case "player_ability":
+            if (players[data.playerId]) {
+              activateAbility(data.playerId);
+              playActivateAbility();
+            }
+            break;
+
+          case "player_left":
+            delete players[data.playerId];
+            break;
+        }
+      }
+
+      function activateAbility(playerId) {
+        const player = players[playerId];
+        if (!player || player.health <= 0) return;
+
+        const char = CHARACTERS[player.character];
+        const ability = char.ability;
+        const now = Date.now();
+
+        // Check cooldown
+        if (now < player.abilityCooldown) return;
+
+        // Set cooldown
+        player.abilityCooldown = now + ability.cooldown;
+
+        switch (ability.effect) {
+          case "shield":
+            player.abilityActive = true;
+            player.abilityEndTime = now + ability.duration;
+            break;
+
+          case "pierce":
+            player.pierceNextShot = true;
+            player.abilityActive = true;
+            player.abilityEndTime = now + 5000; // 5 seconds to use it
+            break;
+
+          case "dash":
+            player.abilityActive = true;
+            player.abilityEndTime = now + ability.duration;
+            player.dashDirection = { x: player.vx, y: player.vy };
+            break;
+
+          case "heal":
+            player.health = Math.min(
+              player.maxHealth,
+              player.health + player.maxHealth * 0.3
+            );
+            break;
+
+          case "triple":
+            // Triple shot - fire 3 bullets with AUTO-AIM
+            let tripleAngle = 0;
+
+            // Find closest ALIVE enemy
+            let tripleTarget = null;
+            let tripleDist = Infinity;
+
+            for (const enemy of Object.values(players)) {
+              // Skip: self, dead, respawning, eliminated
+              if (enemy.id === playerId) continue;
+              if (enemy.health <= 0) continue;
+              if (enemy.lives <= 0) continue;
+              if (enemy.isRespawning) continue;
+
+              const dx = enemy.x - player.x;
+              const dy = enemy.y - player.y;
+              const dist = Math.sqrt(dx * dx + dy * dy);
+
+              if (dist < tripleDist) {
+                tripleDist = dist;
+                tripleTarget = enemy;
+              }
+            }
+
+            if (tripleTarget) {
+              // Aim at enemy
+              tripleAngle = Math.atan2(
+                tripleTarget.y - player.y,
+                tripleTarget.x - player.x
+              );
+            } else {
+              // No enemy found - use movement direction or default to right
+              if (Math.abs(player.vx) > 0.5 || Math.abs(player.vy) > 0.5) {
+                tripleAngle = Math.atan2(player.vy, player.vx);
+              } else {
+                tripleAngle = 0; // Default: shoot right
+              }
+            }
+
+            const spread = Math.PI / 8;
+
+            for (let i = -1; i <= 1; i++) {
+              const bulletAngle = tripleAngle + i * spread;
+              bullets.push({
+                x: player.x + Math.cos(bulletAngle) * 30,
+                y: player.y + Math.sin(bulletAngle) * 30,
+                vx: Math.cos(bulletAngle) * char.stats.bulletSpeed,
+                vy: Math.sin(bulletAngle) * char.stats.bulletSpeed,
+                owner: playerId,
+                damage: char.stats.damage,
+                color: char.color,
+                pierce: false,
+              });
+            }
+            break;
+        }
+
+        // Send update to player
+        ws.send(
+          JSON.stringify({
+            type: "game_update",
+            players: [
+              {
+                id: playerId,
+                abilityCooldown: player.abilityCooldown,
+                abilityActive: player.abilityActive,
+              },
+            ],
+          })
+        );
+      }
+
+      function shoot(playerId) {
+        const player = players[playerId];
+        if (!player || player.health <= 0) return;
+
+        const char = CHARACTERS[player.character];
+        const now = Date.now();
+
+        if (now - player.lastShot < char.stats.fireRate * 1000) return;
+        player.lastShot = now;
+
+        // AUTO-AIM: Find closest ALIVE enemy
+        let closestEnemy = null;
+        let closestDist = Infinity;
+
+        for (const enemy of Object.values(players)) {
+          // Skip: self, dead, respawning, eliminated
+          if (enemy.id === playerId) continue;
+          if (enemy.health <= 0) continue;
+          if (enemy.lives <= 0) continue;
+          if (enemy.isRespawning) continue;
+
+          const dx = enemy.x - player.x;
+          const dy = enemy.y - player.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist < closestDist) {
+            closestDist = dist;
+            closestEnemy = enemy;
+          }
+        }
+
+        let dirX, dirY;
+
+        if (closestEnemy) {
+          // Aim at closest enemy
+          const dx = closestEnemy.x - player.x;
+          const dy = closestEnemy.y - player.y;
+          const len = Math.sqrt(dx * dx + dy * dy);
+          dirX = dx / len;
+          dirY = dy / len;
+        } else {
+          // No enemies found - use movement direction or default to right
+          if (Math.abs(player.vx) > 0.5 || Math.abs(player.vy) > 0.5) {
+            const len = Math.sqrt(
+              player.vx * player.vx + player.vy * player.vy
+            );
+            dirX = player.vx / len;
+            dirY = player.vy / len;
+          } else {
+            dirX = 1;
+            dirY = 0;
+          }
+        }
+
+        const isPiercing = player.pierceNextShot;
+        if (isPiercing) {
+          player.pierceNextShot = false;
+          player.abilityActive = false;
+        }
+
+        bullets.push({
+          x: player.x + dirX * 30,
+          y: player.y + dirY * 30,
+          vx: dirX * char.stats.bulletSpeed,
+          vy: dirY * char.stats.bulletSpeed,
+          owner: playerId,
+          damage: char.stats.damage,
+          color: char.color,
+          pierce: isPiercing,
+        });
+      }
+
+      function isInZone(player, zone) {
+        return (
+          player.x > zone.x &&
+          player.x < zone.x + zone.w &&
+          player.y > zone.y &&
+          player.y < zone.y + zone.h
+        );
+      }
+
+      function update() {
+        if (gameState !== "playing") return;
+
+        const now = Date.now();
+
+        // Update power-ups (remove expired)
+        powerUps = powerUps.filter((p) => now - p.spawnTime < POWERUP_DURATION);
+
+        // Update players
+        Object.values(players).forEach((player) => {
+          // PRIMA: Check for death and respawn (deve essere processato anche se health <= 0)
+          if (player.health <= 0 && player.lives > 0 && !player.isRespawning) {
+            // Player just died - start respawn process
+            player.isRespawning = true;
+            playRespawnSound();
+            player.lives--;
+            player.deaths++;
+
+            // Find killer and give kill credit
+            if (player.lastHitBy && players[player.lastHitBy]) {
+              players[player.lastHitBy].kills++;
+            }
+
+            // Send death update to all
+            ws.send(
+              JSON.stringify({
+                type: "game_update",
+                players: Object.values(players).map((p) => ({
+                  id: p.id,
+                  lives: p.lives,
+                  health: p.health,
+                  maxHealth: p.maxHealth,
+                  kills: p.kills,
+                  deaths: p.deaths,
+                })),
+              })
+            );
+
+            // Check if this player is eliminated (0 lives)
+            if (player.lives <= 0) {
+              player.isRespawning = false;
+              checkGameEnd();
+            } else {
+              // Respawn after 3 seconds
+              const playerId = player.id;
+              setTimeout(() => {
+                if (!players[playerId]) return;
+                const p = players[playerId];
+
+                const spawnPoints = [
+                  { x: 100, y: 100 },
+                  { x: canvas.width - 100, y: 100 },
+                  { x: 100, y: canvas.height - 100 },
+                  { x: canvas.width - 100, y: canvas.height - 100 },
+                ];
+                const spawn = spawnPoints[Math.floor(Math.random() * 4)];
+                p.x = spawn.x;
+                p.y = spawn.y;
+                p.health = p.maxHealth;
+                p.abilityActive = false;
+                p.isRespawning = false;
+                p.abilityCooldown = Date.now() + 2000;
+                p.lastHitBy = null;
+
+                // Notify respawn
+                ws.send(
+                  JSON.stringify({
+                    type: "game_update",
+                    players: [
+                      {
+                        id: p.id,
+                        health: p.health,
+                        maxHealth: p.maxHealth,
+                        lives: p.lives,
+                      },
+                    ],
+                  })
+                );
+              }, 3000);
+            }
+          }
+
+          // Skip dead or eliminated players for movement/actions
+          if (player.health <= 0 || player.lives <= 0) return;
+
+          // Check ability expiration
+          if (player.abilityActive && now > player.abilityEndTime) {
+            player.abilityActive = false;
+          }
+
+          // Move
+          const newX = player.x + player.vx;
+          const newY = player.y + player.vy;
+
+          // Collision with walls
+          let canMoveX = true,
+            canMoveY = true;
+
+          for (const obs of obstacles) {
+            if (checkCollision({ x: newX, y: player.y, r: player.r }, obs)) {
+              canMoveX = false;
+            }
+            if (checkCollision({ x: player.x, y: newY, r: player.r }, obs)) {
+              canMoveY = false;
+            }
+          }
+
+          if (canMoveX)
+            player.x = Math.max(
+              player.r,
+              Math.min(canvas.width - player.r, newX)
+            );
+          if (canMoveY)
+            player.y = Math.max(
+              player.r,
+              Math.min(canvas.height - player.r, newY)
+            );
+
+          // Friction
+          player.vx *= 0.92;
+          player.vy *= 0.92;
+
+          // Camp healing
+          camps.forEach((camp) => {
+            if (isInZone(player, camp)) {
+              player.health = Math.min(player.maxHealth, player.health + 0.5);
+            }
+          });
+
+          // Special zone effects
+          specialZones.forEach((zone) => {
+            if (isInZone(player, zone)) {
+              switch (zone.type) {
+                case "heal":
+                  console.log("picked");
+                  player.health = Math.min(
+                    player.maxHealth,
+                    player.health + 0.3
+                  );
+                  break;
+                case "damage":
+                  if (
+                    !player.abilityActive ||
+                    CHARACTERS[player.character].ability.effect !== "shield"
+                  ) {
+                    player.health -= 0.2;
+                  }
+                  break;
+              }
+            }
+          });
+
+          // Power-up collection
+          powerUps = powerUps.filter((powerUp) => {
+            const dx = player.x - powerUp.x;
+            const dy = player.y - powerUp.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist < player.r + powerUp.radius) {
+              // Check if colors match
+              const playerColor = CHARACTERS[player.character].color;
+              if (playerColor === powerUp.color) {
+                // Recharge ability ONLY if colors match
+                player.abilityCooldown = 0;
+
+                // Notify player with success
+                ws.send(
+                  JSON.stringify({
+                    type: "game_update",
+                    players: [
+                      {
+                        id: player.id,
+                        abilityCooldown: 0,
+                        powerUpCollected: true,
+                        powerUpSuccess: true,
+                      },
+                    ],
+                  })
+                );
+              } else {
+                // Wrong color - notify player (no effect)
+                ws.send(
+                  JSON.stringify({
+                    type: "game_update",
+                    players: [
+                      {
+                        id: player.id,
+                        powerUpCollected: true,
+                        powerUpSuccess: false,
+                      },
+                    ],
+                  })
+                );
+              }
+              return false; // Remove power-up regardless
+            }
+            return true;
+          });
+        });
+
+        // Update bullets
+        bullets = bullets.filter((bullet) => {
+          bullet.x += bullet.vx;
+          bullet.y += bullet.vy;
+
+          // Out of bounds
+          if (
+            bullet.x < 0 ||
+            bullet.x > canvas.width ||
+            bullet.y < 0 ||
+            bullet.y > canvas.height
+          ) {
+            return false;
+          }
+
+          // Collision with obstacles (unless piercing)
+          if (!bullet.pierce) {
+            for (const obs of obstacles) {
+              if (
+                bullet.x > obs.x &&
+                bullet.x < obs.x + obs.w &&
+                bullet.y > obs.y &&
+                bullet.y < obs.y + obs.h
+              ) {
+                return false;
+              }
+            }
+          }
+
+          // Collision with players
+          for (let player of Object.values(players)) {
+            // Skip: own bullets, dead players, respawning players, eliminated players
+            if (
+              player.id === bullet.owner ||
+              player.health <= 0 ||
+              player.isRespawning ||
+              player.lives <= 0
+            )
+              continue;
+
+            const dx = bullet.x - player.x;
+            const dy = bullet.y - player.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist < player.r) {
+              // Check for shield
+              if (
+                player.abilityActive &&
+                CHARACTERS[player.character].ability.effect === "shield"
+              ) {
+                // Blocked by shield
+                return false;
+              }
+
+              // Check for dash invincibility
+              if (
+                player.abilityActive &&
+                CHARACTERS[player.character].ability.effect === "dash"
+              ) {
+                // Invincible during dash
+                return false;
+              }
+
+              player.health -= bullet.damage;
+              player.lastHitBy = bullet.owner;
+
+              return false;
+            }
+          }
+
+          return true;
+        });
+
+        // Check for game end periodically
+        checkGameEnd();
+      }
+
+      function checkGameEnd() {
+        if (gameState !== "playing") return;
+
+        const alivePlayers = Object.values(players).filter((p) => p.lives > 0);
+        const totalPlayers = Object.keys(players).length;
+
+        // Need at least 2 players to have started, and only 1 remaining
+        if (totalPlayers > 1 && alivePlayers.length === 1) {
+          gameState = "ended";
+          const winner = alivePlayers[0];
+          const winnerChar = CHARACTERS[winner.character];
+
+          // Send game end to all phones
+          ws.send(
+            JSON.stringify({
+              type: "game_end",
+              winner: winner.id,
+              character: winner.character,
+              characterName: winnerChar.name,
+              kills: winner.kills,
+              deaths: winner.deaths,
+            })
+          );
+        }
+
+        // Edge case: all players eliminated (draw)
+        if (totalPlayers > 1 && alivePlayers.length === 0) {
+          gameState = "ended";
+          ws.send(
+            JSON.stringify({
+              type: "game_end",
+              winner: null,
+              character: null,
+              isDraw: true,
+            })
+          );
+        }
+      }
+
+      function checkCollision(circle, rect) {
+        const closestX = Math.max(rect.x, Math.min(circle.x, rect.x + rect.w));
+        const closestY = Math.max(rect.y, Math.min(circle.y, rect.y + rect.h));
+        const dx = circle.x - closestX;
+        const dy = circle.y - closestY;
+        return dx * dx + dy * dy < circle.r * circle.r;
+      }
+
+      function draw() {
+        const map = MAPS[currentMap];
+
+        // Clear with fade effect
+        ctx.fillStyle = map.background + "4D";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Draw grid
+        ctx.strokeStyle = map.gridColor;
+        ctx.lineWidth = 1;
+        for (let i = 0; i < canvas.width; i += 50) {
+          ctx.beginPath();
+          ctx.moveTo(i, 0);
+          ctx.lineTo(i, canvas.height);
+          ctx.stroke();
+        }
+        for (let i = 0; i < canvas.height; i += 50) {
+          ctx.beginPath();
+          ctx.moveTo(0, i);
+          ctx.lineTo(canvas.width, i);
+          ctx.stroke();
+        }
+
+        // Draw special zones
+        specialZones.forEach((zone) => {
+          ctx.fillStyle = zone.color + "30";
+          ctx.fillRect(zone.x, zone.y, zone.w, zone.h);
+          ctx.strokeStyle = zone.color;
+          ctx.lineWidth = 2;
+          ctx.setLineDash([5, 5]);
+          ctx.strokeRect(zone.x, zone.y, zone.w, zone.h);
+          ctx.setLineDash([]);
+
+          // Draw zone icon
+          ctx.font = "bold 24px Arial";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillStyle = zone.color;
+          const icon =
+            zone.type === "speed"
+              ? "⚡"
+              : zone.type === "damage"
+              ? "☠️"
+              : zone.type === "heal"
+              ? "💚"
+              : "🐌";
+          ctx.fillText(icon, zone.x + zone.w / 2, zone.y + zone.h / 2);
+        });
+
+        // Draw camps
+        camps.forEach((camp) => {
+          ctx.fillStyle = camp.color + "40";
+          ctx.fillRect(camp.x, camp.y, camp.w, camp.h);
+          ctx.strokeStyle = camp.color;
+          ctx.lineWidth = 3;
+          ctx.strokeRect(camp.x, camp.y, camp.w, camp.h);
+
+          ctx.fillStyle = camp.color;
+          ctx.font = "bold 30px Arial";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText("+", camp.x + camp.w / 2, camp.y + camp.h / 2);
+        });
+
+        // Draw obstacles
+        obstacles.forEach((obs) => {
+          ctx.fillStyle = obs.color;
+          ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+          ctx.strokeStyle = "#546E7A";
+          ctx.lineWidth = 2;
+          ctx.strokeRect(obs.x, obs.y, obs.w, obs.h);
+
+          // Texture
+          ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
+          for (let i = 0; i < 5; i++) {
+            ctx.fillRect(
+              obs.x + Math.random() * obs.w,
+              obs.y + Math.random() * obs.h,
+              3,
+              3
+            );
+          }
+        });
+
+        // Draw power-ups
+        powerUps.forEach((powerUp) => {
+          const age = Date.now() - powerUp.spawnTime;
+          const pulse = 1 + Math.sin(age / 200) * 0.2;
+          const alpha =
+            age > POWERUP_DURATION - 3000 ? Math.sin(age / 100) * 0.5 + 0.5 : 1;
+
+          ctx.globalAlpha = alpha;
+
+          // Glow
+          ctx.shadowColor = powerUp.color;
+          ctx.shadowBlur = 20;
+
+          // Outer ring
+          ctx.strokeStyle = powerUp.color;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(powerUp.x, powerUp.y, powerUp.radius * pulse, 0, Math.PI * 2);
+          ctx.stroke();
+
+          // Inner fill
+          ctx.fillStyle = powerUp.color + "60";
+          ctx.beginPath();
+          ctx.arc(
+            powerUp.x,
+            powerUp.y,
+            powerUp.radius * pulse * 0.7,
+            0,
+            Math.PI * 2
+          );
+          ctx.fill();
+
+          // Show ability icon of matching character
+          ctx.fillStyle = "#fff";
+          ctx.font = "16px Arial";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+
+          // Find which character has this color and show their ability icon
+          let abilityIcon = "🔋"; // Default
+          for (const [key, char] of Object.entries(CHARACTERS)) {
+            if (char.color === powerUp.color) {
+              abilityIcon = char.ability.icon;
+              break;
+            }
+          }
+          ctx.fillText(abilityIcon, powerUp.x, powerUp.y);
+
+          ctx.shadowBlur = 0;
+          ctx.globalAlpha = 1;
+        });
+
+        // Draw bullets
+        bullets.forEach((bullet) => {
+          ctx.fillStyle = bullet.color;
+          ctx.shadowColor = bullet.color;
+          ctx.shadowBlur = bullet.pierce ? 25 : 15;
+          ctx.beginPath();
+          ctx.arc(bullet.x, bullet.y, bullet.pierce ? 8 : 5, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Piercing trail
+          if (bullet.pierce) {
+            ctx.strokeStyle = bullet.color + "60";
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(bullet.x - bullet.vx * 3, bullet.y - bullet.vy * 3);
+            ctx.lineTo(bullet.x, bullet.y);
+            ctx.stroke();
+          }
+        });
+        ctx.shadowBlur = 0;
+
+        // Draw players
+        Object.values(players).forEach((player) => {
+          if (player.lives <= 0) {
+            // Eliminated - show X
+            ctx.fillStyle = "#666";
+            ctx.font = "bold 40px Arial";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("❌", player.x, player.y);
+            return;
+          }
+
+          if (player.health <= 0) {
+            // Dead but has lives - tombstone
+            ctx.fillStyle = "#424242";
+            ctx.fillRect(player.x - 15, player.y - 10, 30, 35);
+            ctx.fillStyle = "#616161";
+            ctx.beginPath();
+            ctx.arc(player.x, player.y - 10, 15, Math.PI, 0, false);
+            ctx.fill();
+            ctx.fillStyle = "#fff";
+            ctx.font = "20px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText("💀", player.x, player.y + 5);
+
+            // Lives remaining
+            ctx.fillStyle = "#ff4444";
+            ctx.font = "12px Arial";
+            ctx.fillText(`${player.lives} ❤️`, player.x, player.y + 30);
+            return;
+          }
+
+          const char = CHARACTERS[player.character];
+          const ability = char.ability;
+
+          // Draw shadow
+          ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+          ctx.beginPath();
+          ctx.ellipse(
+            player.x,
+            player.y + player.r + 5,
+            player.r,
+            player.r * 0.3,
+            0,
+            0,
+            Math.PI * 2
+          );
+          ctx.fill();
+
+          // Shield effect
+          if (player.abilityActive && ability.effect === "shield") {
+            ctx.strokeStyle = "#00ffff";
+            ctx.lineWidth = 4;
+            ctx.shadowColor = "#00ffff";
+            ctx.shadowBlur = 20;
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, player.r + 10, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+          }
+
+          // Dash effect
+          if (player.abilityActive && ability.effect === "dash") {
+            ctx.fillStyle = char.color + "40";
+            for (let i = 1; i <= 3; i++) {
+              ctx.beginPath();
+              ctx.arc(
+                player.x - player.vx * i * 5,
+                player.y - player.vy * i * 5,
+                player.r * (1 - i * 0.2),
+                0,
+                Math.PI * 2
+              );
+              ctx.fill();
+            }
+          }
+
+          // Piercing indicator
+          if (player.pierceNextShot) {
+            ctx.strokeStyle = "#ff00ff";
+            ctx.lineWidth = 2;
+            ctx.setLineDash([3, 3]);
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, player.r + 5, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+          }
+
+          // Draw player shape
+          ctx.fillStyle = char.color;
+          ctx.shadowColor = char.color;
+          ctx.shadowBlur = 20;
+          ctx.beginPath();
+
+          const r = player.r;
+          const x = player.x;
+          const y = player.y;
+
+          if (player.character === "TANK") {
+            for (let i = 0; i < 6; i++) {
+              const angle = (Math.PI / 3) * i - Math.PI / 2;
+              const px = x + r * Math.cos(angle);
+              const py = y + r * Math.sin(angle);
+              i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+            }
+            ctx.closePath();
+          } else if (player.character === "SNIPER") {
+            ctx.moveTo(x, y - r);
+            ctx.lineTo(x + r * 0.9, y + r * 0.7);
+            ctx.lineTo(x - r * 0.9, y + r * 0.7);
+            ctx.closePath();
+          } else if (player.character === "RUNNER") {
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+          } else if (player.character === "BALANCED") {
+            for (let i = 0; i < 5; i++) {
+              const angle = ((Math.PI * 2) / 5) * i - Math.PI / 2;
+              const px = x + r * Math.cos(angle);
+              const py = y + r * Math.sin(angle);
+              i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+            }
+            ctx.closePath();
+          } else if (player.character === "ASSAULT") {
+            ctx.moveTo(x, y - r);
+            ctx.lineTo(x + r, y);
+            ctx.lineTo(x, y + r);
+            ctx.lineTo(x - r, y);
+            ctx.closePath();
+          } else {
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+          }
+
+          ctx.fill();
+          ctx.shadowBlur = 0;
+
+          // Health bar
+          const barWidth = 50;
+          const barHeight = 6;
+          const healthPercent = player.health / player.maxHealth;
+
+          ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+          ctx.fillRect(
+            player.x - barWidth / 2,
+            player.y - player.r - 15,
+            barWidth,
+            barHeight
+          );
+
+          ctx.fillStyle =
+            healthPercent > 0.6
+              ? "#4CAF50"
+              : healthPercent > 0.3
+              ? "#FFC107"
+              : "#F44336";
+          ctx.fillRect(
+            player.x - barWidth / 2,
+            player.y - player.r - 15,
+            barWidth * healthPercent,
+            barHeight
+          );
+
+          ctx.strokeStyle = "#fff";
+          ctx.lineWidth = 1;
+          ctx.strokeRect(
+            player.x - barWidth / 2,
+            player.y - player.r - 15,
+            barWidth,
+            barHeight
+          );
+
+          // Lives display
+          ctx.fillStyle = "#ff4444";
+          ctx.font = "10px Arial";
+          ctx.textAlign = "center";
+          let hearts = "";
+          for (let i = 0; i < player.lives; i++) hearts += "❤️";
+          ctx.fillText(hearts, player.x, player.y - player.r - 22);
+
+          // Character name
+          ctx.fillStyle = "#fff";
+          ctx.font = "bold 12px Arial";
+          ctx.textBaseline = "bottom";
+          ctx.fillText(char.name, player.x, player.y - player.r - 32);
+
+          // Kill/death count
+          ctx.fillStyle = "#FFD700";
+          ctx.font = "10px Arial";
+          ctx.fillText(
+            `${player.kills}/${player.deaths}`,
+            player.x,
+            player.y + player.r + 15
+          );
+
+          // Ability cooldown indicator
+          const cooldownRemaining = Math.max(
+            0,
+            player.abilityCooldown - Date.now()
+          );
+          if (cooldownRemaining > 0) {
+            const cooldownPercent = cooldownRemaining / ability.cooldown;
+            ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+            ctx.beginPath();
+            ctx.moveTo(player.x, player.y);
+            ctx.arc(
+              player.x,
+              player.y,
+              player.r,
+              -Math.PI / 2,
+              -Math.PI / 2 + Math.PI * 2 * cooldownPercent
+            );
+            ctx.closePath();
+            ctx.fill();
+          }
+        });
+
+        // Scoreboard (only during gameplay, not when game ended)
+        if (gameState !== "ended") {
+          ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+          ctx.fillRect(10, 10, 260, 50 + Object.keys(players).length * 25);
+
+          ctx.fillStyle = "#FFD700";
+          ctx.font = "bold 16px Arial";
+          ctx.textAlign = "left";
+          ctx.textBaseline = "top";
+          ctx.fillText("SCOREBOARD", 20, 15);
+          ctx.fillStyle = "#888";
+          ctx.font = "12px Arial";
+          ctx.fillText(`Map: ${MAPS[currentMap].name}`, 120, 17);
+
+          ctx.font = "14px Arial";
+          let yPos = 45;
+          Object.values(players)
+            .sort((a, b) => b.kills - a.kills || a.deaths - b.deaths)
+            .forEach((player, i) => {
+              const char = CHARACTERS[player.character];
+              const status =
+                player.lives <= 0 ? " ☠️" : player.health <= 0 ? " 💀" : "";
+              ctx.fillStyle = player.lives <= 0 ? "#666" : char.color;
+              ctx.fillText(
+                `${i + 1}. ${char.name}: ${player.kills}K/${player.deaths}D [${
+                  player.lives
+                }❤️]${status}`,
+                20,
+                yPos
+              );
+              yPos += 25;
+            });
+        }
+
+        // Game over screen
+        if (gameState === "ended") {
+          ctx.fillStyle = "rgba(0, 0, 0, 0.9)";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          const winner = Object.values(players).find((p) => p.lives > 0);
+          const numPlayers = Object.keys(players).length;
+
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+
+          if (winner) {
+            const char = CHARACTERS[winner.character];
+
+            // Trophy icon - positioned higher
+            ctx.font = "60px Arial";
+            ctx.fillText("🏆", canvas.width / 2, 80);
+
+            // Winner text with glow
+            ctx.shadowColor = char.color;
+            ctx.shadowBlur = 30;
+            ctx.fillStyle = char.color;
+            ctx.font = "bold 60px Arial";
+            ctx.fillText("WINNER!", canvas.width / 2, 160);
+            ctx.shadowBlur = 0;
+
+            // Character name
+            ctx.fillStyle = "#fff";
+            ctx.font = "bold 45px Arial";
+            ctx.fillText(char.name, canvas.width / 2, 230);
+
+            // Stats
+            ctx.fillStyle = "#FFD700";
+            ctx.font = "24px Arial";
+            ctx.fillText(
+              `${winner.kills} Kills | ${winner.deaths} Deaths`,
+              canvas.width / 2,
+              280
+            );
+
+            // Draw winner shape with glow
+            ctx.fillStyle = char.color;
+            ctx.shadowColor = char.color;
+            ctx.shadowBlur = 30;
+            ctx.beginPath();
+            ctx.arc(canvas.width / 2, 340, 35, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+          } else {
+            // Draw - no winner
+            ctx.fillStyle = "#ff6666";
+            ctx.font = "bold 50px Arial";
+            ctx.fillText("💀 DRAW! 💀", canvas.width / 2, 150);
+            ctx.fillStyle = "#aaa";
+            ctx.font = "24px Arial";
+            ctx.fillText("All players eliminated", canvas.width / 2, 210);
+          }
+
+          // Final scoreboard - positioned below winner info
+          const scoreboardY = winner ? 400 : 280;
+          const scoreboardHeight = 40 + numPlayers * 28;
+
+          ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
+          ctx.fillRect(
+            canvas.width / 2 - 180,
+            scoreboardY,
+            360,
+            scoreboardHeight
+          );
+
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
+          ctx.lineWidth = 2;
+          ctx.strokeRect(
+            canvas.width / 2 - 180,
+            scoreboardY,
+            360,
+            scoreboardHeight
+          );
+
+          ctx.fillStyle = "#fff";
+          ctx.font = "bold 18px Arial";
+          ctx.fillText("FINAL SCORES", canvas.width / 2, scoreboardY + 22);
+
+          ctx.font = "16px Arial";
+          let finalY = scoreboardY + 50;
+          Object.values(players)
+            .sort((a, b) => b.kills - a.kills || a.deaths - b.deaths)
+            .forEach((p, i) => {
+              const c = CHARACTERS[p.character];
+              ctx.fillStyle = p.lives > 0 ? c.color : "#888";
+              const medal =
+                i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : "  ";
+              ctx.fillText(
+                `${medal} ${c.name}: ${p.kills} Kills / ${p.deaths} Deaths`,
+                canvas.width / 2,
+                finalY
+              );
+              finalY += 28;
+            });
+        }
+      }
+
+      function loop() {
+        update();
+        draw();
+        requestAnimationFrame(loop);
+      }
+
+      loop();
+    </script>
+  </body>
+</html>
