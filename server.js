@@ -1,4 +1,4 @@
- // server.js
+// server.js
 const express = require("express");
 const path = require("path");
 const http = require("http");
@@ -147,7 +147,7 @@ wss.on("connection", (ws) => {
             // Check if all players are ready
             const allReady = room.players.every((p) => p.ready);
             if (allReady && room.players.length > 0) {
-              // Start game
+              // Start game immediately
               const playerData = room.players.map((p) => ({
                 id: p.id,
                 character: p.character,
@@ -263,6 +263,32 @@ wss.on("connection", (ws) => {
           room.players.forEach(p => {
             p.ws.send(JSON.stringify(data));
           });
+        }
+      } else if (data.type === "restart_game") {
+        // PC requests game restart - reset all player states
+        const room = rooms[ws.room];
+        if (room && ws.role === "pc") {
+          console.log(`Game restart requested for room ${ws.room}`);
+          
+          // Reset all players' ready state
+          room.players.forEach(p => {
+            p.character = null;
+            p.ready = false;
+            
+            // Notify each player to go back to character selection
+            p.ws.send(JSON.stringify({
+              type: "restart_game",
+              message: "Game restarting - select your character"
+            }));
+          });
+          
+          // Notify PC of player count
+          if (room.pc) {
+            room.pc.send(JSON.stringify({
+              type: "player_joined",
+              totalPlayers: room.players.length
+            }));
+          }
         }
       }
     } catch (err) {
