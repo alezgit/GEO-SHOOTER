@@ -68,7 +68,7 @@
         cursor: pointer;
       }
 
-      button#connectBtn {
+      button {
         padding: 10px 20px;
         font-size: 1em;
         border: none;
@@ -81,9 +81,19 @@
         box-shadow: 0 4px 15px rgba(255, 69, 0, 0.4);
       }
 
-      button#connectBtn:hover {
+      button:hover {
         transform: translateY(-2px);
         box-shadow: 0 6px 20px rgba(255, 69, 0, 0.6);
+      }
+
+      #audioControls {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      #volumeSlider {
+        width: 80px;
       }
 
       #status {
@@ -127,25 +137,6 @@
         font-size: 1.2em;
         margin: 10px 0;
       }
-
-      .map-preview {
-        display: flex;
-        gap: 10px;
-        margin-top: 15px;
-        justify-content: center;
-      }
-
-      .map-preview canvas {
-        width: 80px;
-        height: 50px;
-        border: 2px solid #333;
-        border-radius: 5px;
-        cursor: pointer;
-      }
-
-      .map-preview canvas.active {
-        border-color: #ff4500;
-      }
     </style>
   </head>
   <body>
@@ -160,6 +151,10 @@
         <option value="chaos">💥 Chaos</option>
       </select>
       <button id="connectBtn">Connect</button>
+      <div id="audioControls">
+        <button id="muteBtn">🔊 Mute</button>
+        <input type="range" id="volumeSlider" min="0" max="100" value="70" />
+      </div>
       <span id="status">Not connected</span>
     </div>
 
@@ -174,6 +169,122 @@
     </div>
 
     <script>
+      // ============ AUDIO SYSTEM ============
+      class AudioManager {
+        constructor() {
+          this.sounds = {};
+          this.bgMusic = null;
+          this.isMuted = false;
+          this.volume = 0.7;
+          this.soundsLoaded = false;
+        }
+
+        async loadSounds() {
+          const soundFiles = {
+            bgMusic: 'sounds/bg-music.mp3',
+            collectPowerup: 'sounds/collect-powerup.mp3',
+            laserGunfire: 'sounds/laser-gunfire.mp3',
+            moveOverItem: 'sounds/move-over-item.mp3',
+            playerJoined: 'sounds/player-joined.mp3',
+            playerRespawn: 'sounds/player-respawn.mp3',
+            powerup: 'sounds/powerup.mp3'
+          };
+
+          for (const [key, path] of Object.entries(soundFiles)) {
+            try {
+              const audio = new Audio(path);
+              audio.volume = this.volume;
+              
+              if (key === 'bgMusic') {
+                audio.loop = true;
+                this.bgMusic = audio;
+              } else {
+                this.sounds[key] = audio;
+              }
+            } catch (error) {
+              console.warn(`Failed to load sound: ${path}`, error);
+            }
+          }
+
+          this.soundsLoaded = true;
+          console.log('🔊 Audio system initialized');
+        }
+
+        play(soundName, options = {}) {
+          if (this.isMuted || !this.soundsLoaded) return;
+
+          const sound = this.sounds[soundName];
+          if (!sound) {
+            console.warn(`Sound not found: ${soundName}`);
+            return;
+          }
+
+          // Clone audio for overlapping sounds
+          const audioClone = sound.cloneNode();
+          audioClone.volume = options.volume !== undefined ? options.volume * this.volume : this.volume;
+          
+          audioClone.play().catch(err => {
+            console.warn(`Failed to play sound: ${soundName}`, err);
+          });
+        }
+
+        playBgMusic() {
+          if (this.isMuted || !this.bgMusic) return;
+          
+          this.bgMusic.volume = this.volume * 0.3; // Background music quieter
+          this.bgMusic.play().catch(err => {
+            console.warn('Failed to play background music', err);
+          });
+        }
+
+        stopBgMusic() {
+          if (this.bgMusic) {
+            this.bgMusic.pause();
+            this.bgMusic.currentTime = 0;
+          }
+        }
+
+        setVolume(vol) {
+          this.volume = vol;
+          if (this.bgMusic) {
+            this.bgMusic.volume = vol * 0.3;
+          }
+          Object.values(this.sounds).forEach(sound => {
+            sound.volume = vol;
+          });
+        }
+
+        toggleMute() {
+          this.isMuted = !this.isMuted;
+          
+          if (this.isMuted) {
+            this.stopBgMusic();
+          } else {
+            if (gameState === "playing") {
+              this.playBgMusic();
+            }
+          }
+          
+          return this.isMuted;
+        }
+      }
+
+      const audioManager = new AudioManager();
+
+      // Audio controls
+      document.getElementById('muteBtn').onclick = () => {
+        const isMuted = audioManager.toggleMute();
+        document.getElementById('muteBtn').textContent = isMuted ? '🔇 Unmute' : '🔊 Mute';
+      };
+
+      document.getElementById('volumeSlider').oninput = (e) => {
+        audioManager.setVolume(e.target.value / 100);
+      };
+
+      // Load audio on page load
+      audioManager.loadSounds();
+
+      // ============ GAME CODE ============
       const canvas = document.getElementById("gameCanvas");
       const ctx = canvas.getContext("2d");
       const waitingScreen = document.getElementById("waitingScreen");
@@ -182,8 +293,8 @@
       const mapInfoEl = document.getElementById("mapInfo");
 
       let ws, roomId;
-      let gameState = "waiting"; // waiting, playing, ended
-      let players = {}; // { playerId: { x, y, character, health, kills, deaths, lives, bullets, vx, vy, lastShot, ability } }
+      let gameState = "waiting";
+      let players = {};
       let bullets = [];
       let obstacles = [];
       let camps = [];
@@ -192,79 +303,70 @@
       let currentMap = "arena";
 
       const MAX_LIVES = 3;
-      const POWERUP_SPAWN_INTERVAL = 15000; // 15 seconds
-      const POWERUP_DURATION = 10000; // 10 seconds on map
 
-      // Character definitions with unique abilities
       const CHARACTERS = {
         TANK: {
           name: "Tank",
           color: "#4CAF50",
           stats: { speed: 2, health: 150, damage: 35, fireRate: 1.5, bulletSpeed: 8 },
-          spider: { speed: 20, health: 95, damage: 70, fireRate: 35, defense: 80 },
           ability: {
             name: "Shield",
             icon: "🛡️",
             cooldown: 12000,
             duration: 3000,
-            effect: "shield" // Absorbs all damage
+            effect: "shield"
           }
         },
         SNIPER: {
           name: "Sniper",
           color: "#2196F3",
           stats: { speed: 4, health: 80, damage: 60, fireRate: 2.5, bulletSpeed: 15 },
-          spider: { speed: 70, health: 30, damage: 100, fireRate: 25, defense: 75 },
           ability: {
             name: "Piercing Shot",
             icon: "🎯",
             cooldown: 10000,
             duration: 0,
-            effect: "pierce" // Next shot goes through walls
+            effect: "pierce"
           }
         },
         RUNNER: {
           name: "Runner",
           color: "#FFC107",
           stats: { speed: 7, health: 70, damage: 15, fireRate: 0.3, bulletSpeed: 10 },
-          spider: { speed: 100, health: 40, damage: 30, fireRate: 100, defense: 30 },
           ability: {
             name: "Dash",
             icon: "💨",
             cooldown: 6000,
             duration: 300,
-            effect: "dash" // Super speed + invincibility
+            effect: "dash"
           }
         },
         BALANCED: {
           name: "Balanced",
           color: "#9C27B0",
           stats: { speed: 4.5, health: 100, damage: 25, fireRate: 0.8, bulletSpeed: 10 },
-          spider: { speed: 60, health: 60, damage: 60, fireRate: 60, defense: 60 },
           ability: {
             name: "Heal Burst",
             icon: "💚",
             cooldown: 15000,
             duration: 0,
-            effect: "heal" // Instant heal 30%
+            effect: "heal"
           }
         },
         ASSAULT: {
           name: "Assault",
           color: "#FF5722",
           stats: { speed: 5, health: 90, damage: 30, fireRate: 0.5, bulletSpeed: 12 },
-          spider: { speed: 70, health: 50, damage: 65, fireRate: 75, defense: 40 },
           ability: {
             name: "Triple Shot",
             icon: "🔥",
             cooldown: 8000,
             duration: 0,
-            effect: "triple" // Fires 3 bullets in spread
+            effect: "triple"
           }
         }
       };
 
-      // Map configurations
       const MAPS = {
         arena: {
           name: "Arena",
@@ -272,20 +374,16 @@
           gridColor: "rgba(255, 255, 255, 0.05)",
           generateObstacles: () => {
             const obs = [];
-            // Central structure
             obs.push({ x: canvas.width/2 - 75, y: canvas.height/2 - 75, w: 150, h: 150, color: "#37474F" });
-            // Corner walls
             obs.push({ x: 200, y: 150, w: 100, h: 20, color: "#37474F" });
             obs.push({ x: 900, y: 150, w: 100, h: 20, color: "#37474F" });
             obs.push({ x: 200, y: 530, w: 100, h: 20, color: "#37474F" });
             obs.push({ x: 900, y: 530, w: 100, h: 20, color: "#37474F" });
-            // Side walls
             obs.push({ x: 400, y: 250, w: 20, h: 100, color: "#37474F" });
             obs.push({ x: 780, y: 350, w: 20, h: 100, color: "#37474F" });
             return obs;
           },
-          generateZones: () => [
-          ]
+          generateZones: () => []
         },
         maze: {
           name: "Maze",
@@ -293,20 +391,16 @@
           gridColor: "rgba(100, 255, 100, 0.03)",
           generateObstacles: () => {
             const obs = [];
-            // Horizontal walls
             for (let i = 0; i < 4; i++) {
               obs.push({ x: 150 + i * 250, y: 180, w: 150, h: 20, color: "#2d5a27" });
               obs.push({ x: 100 + i * 250, y: 500, w: 150, h: 20, color: "#2d5a27" });
             }
-            // Vertical walls
             for (let i = 0; i < 3; i++) {
               obs.push({ x: 300 + i * 300, y: 250, w: 20, h: 200, color: "#2d5a27" });
             }
             return obs;
           },
-          generateZones: () => [
-
-          ]
+          generateZones: () => []
         },
         fortress: {
           name: "Fortress",
@@ -314,21 +408,17 @@
           gridColor: "rgba(255, 200, 100, 0.03)",
           generateObstacles: () => {
             const obs = [];
-            // Outer walls
             obs.push({ x: 100, y: 100, w: 300, h: 30, color: "#5d4e37" });
             obs.push({ x: canvas.width - 400, y: 100, w: 300, h: 30, color: "#5d4e37" });
             obs.push({ x: 100, y: canvas.height - 130, w: 300, h: 30, color: "#5d4e37" });
             obs.push({ x: canvas.width - 400, y: canvas.height - 130, w: 300, h: 30, color: "#5d4e37" });
-            // Inner fortress
             obs.push({ x: canvas.width/2 - 100, y: canvas.height/2 - 100, w: 200, h: 30, color: "#8b7355" });
             obs.push({ x: canvas.width/2 - 100, y: canvas.height/2 + 70, w: 200, h: 30, color: "#8b7355" });
             obs.push({ x: canvas.width/2 - 100, y: canvas.height/2 - 70, w: 30, h: 140, color: "#8b7355" });
             obs.push({ x: canvas.width/2 + 70, y: canvas.height/2 - 70, w: 30, h: 140, color: "#8b7355" });
             return obs;
           },
-          generateZones: () => [
-
-          ]
+          generateZones: () => []
         },
         chaos: {
           name: "Chaos",
@@ -336,7 +426,6 @@
           gridColor: "rgba(255, 50, 50, 0.03)",
           generateObstacles: () => {
             const obs = [];
-            // Random procedural obstacles
             const seed = Date.now();
             const random = (i) => ((seed * (i + 1) * 9301 + 49297) % 233280) / 233280;
             
@@ -346,7 +435,6 @@
               const w = 40 + random(i + 200) * 80;
               const h = 20 + random(i + 300) * 60;
               
-              // Avoid spawn corners
               if ((x < 200 && y < 200) || (x > canvas.width - 250 && y < 200) ||
                   (x < 200 && y > canvas.height - 250) || (x > canvas.width - 250 && y > canvas.height - 250)) {
                 continue;
@@ -356,310 +444,215 @@
             }
             return obs;
           },
-          generateZones: () => {
-            const zones = [];
-            const types = ["speed", "damage", "heal", "slow"];
-            for (let i = 0; i < 4; i++) {
-              zones.push({
-                x: 200 + i * 220,
-                y: 300 + (i % 2) * 100,
-                w: 60,
-                h: 60,
-                type: types[i],
-                color: types[i] === "speed" ? "#00BCD4" : types[i] === "damage" ? "#F44336" : types[i] === "heal" ? "#4CAF50" : "#9E9E9E"
-              });
-            }
-            return zones;
-          }
+          generateZones: () => []
         }
       };
 
-      // Initialize environment based on map
+      const DROP_TYPES = {
+        ABILITY: {
+          icon: "⚡",
+          color: "#FFD700",
+          effect: "recharge_ability",
+          duration: 12000,
+          radius: 20
+        },
+        SPEED: {
+          icon: "💨",
+          color: "#00BCD4", 
+          effect: "speed_boost",
+          duration: 10000,
+          radius: 20,
+          boostDuration: 5000
+        },
+        HEALTH: {
+          icon: "❤️",
+          color: "#4CAF50",
+          effect: "heal",
+          duration: 8000,
+          radius: 20,
+          healAmount: 30
+        }
+      };
+
+      const ARENA_EVENTS = {
+        INFERNO: {
+          name: "Fire Tempest",
+          icon: "🔥",
+          duration: 15000,
+          backgroundTint: 'rgba(255, 69, 0, 0.25)',
+          wallColor: '#8B0000',
+          gridColor: 'rgba(255, 100, 0, 0.15)'
+        },
+        BLIZZARD: {
+          name: "Ice Blizzard", 
+          icon: "❄️",
+          duration: 18000,
+          backgroundTint: 'rgba(0, 191, 255, 0.2)',
+          wallColor: '#4682B4',
+          gridColor: 'rgba(200, 230, 255, 0.1)',
+          particleColor: '#E0F7FF'
+        },
+        GRAVITY_CHAOS: {
+          name: "Gravity Chaos",
+          icon: "🌀",
+          duration: 8000,
+          backgroundTint: 'rgba(156, 39, 176, 0.2)',
+          wallColor: '#7B1FA2',
+          gridColor: 'rgba(200, 100, 255, 0.1)'
+        }
+      };
+
+      let currentEvent = null;
+      let eventStartTime = 0;
+      let activeDrops = [];
+      let dropInterval = null;
+      let healingPadInterval = null;
+
       function initEnvironment(mapKey = "arena") {
         currentMap = mapKey;
         const map = MAPS[mapKey];
         
         obstacles = map.generateObstacles();
         specialZones = map.generateZones();
-        
-        // Healing camps in corners (always present)
-        // Initialize empty camps array - will spawn randomly
         camps = [];
-        
-        powerUps = [];
+        activeDrops = [];
         
         mapInfoEl.textContent = `Map: ${map.name}`;
       }
 
-      // Spawn power-up for ability recharge
-      // Drop types that can spawn
-const DROP_TYPES = {
-  ABILITY: {
-    icon: "⚡",
-    color: "#FFD700",
-    effect: "recharge_ability",
-    duration: 12000, // 12 seconds on map
-    radius: 20
-  },
-  SPEED: {
-    icon: "💨",
-    color: "#00BCD4", 
-    effect: "speed_boost",
-    duration: 10000,
-    radius: 20,
-    boostDuration: 5000 // How long the boost lasts
-  },
-  HEALTH: {
-    icon: "❤️",
-    color: "#4CAF50",
-    effect: "heal",
-    duration: 8000,
-    radius: 20,
-    healAmount: 30
-  }
-};
+      function spawnDrop() {
+        if (gameState !== "playing") return;
+        if (activeDrops.length >= 2) return;
+        
+        const dropKeys = Object.keys(DROP_TYPES);
+        const randomKey = dropKeys[Math.floor(Math.random() * dropKeys.length)];
+        const dropType = DROP_TYPES[randomKey];
+        
+        let x, y, attempts = 0;
+        do {
+          x = 150 + Math.random() * (canvas.width - 300);
+          y = 150 + Math.random() * (canvas.height - 300);
+          attempts++;
+        } while (attempts < 50 && isColliding(x, y, dropType.radius));
+        
+        activeDrops.push({
+          type: randomKey,
+          x, y,
+          spawnTime: Date.now(),
+          ...dropType
+        });
+        
+        // 🔊 SOUND: Powerup spawned
+        audioManager.play('powerup', { volume: 0.4 });
+      }
 
-// Global event system
-const ARENA_EVENTS = {
-  INFERNO: {
-    name: "Fire Tempest",
-    icon: "🔥",
-    duration: 15000, // Event lasts 15 seconds
-    backgroundTint: 'rgba(255, 69, 0, 0.25)',
-    wallColor: '#8B0000',
-    gridColor: 'rgba(255, 100, 0, 0.15)'
-  },
-  BLIZZARD: {
-    name: "Ice Blizzard", 
-    icon: "❄️",
-    duration: 18000,
-    backgroundTint: 'rgba(0, 191, 255, 0.2)',
-    wallColor: '#4682B4',
-    gridColor: 'rgba(200, 230, 255, 0.1)',
-    particleColor: '#E0F7FF'
-  },
-  GRAVITY_CHAOS: {
-    name: "Gravity Chaos",
-    icon: "🌀",
-    duration: 8000,
-    backgroundTint: 'rgba(156, 39, 176, 0.2)',
-    wallColor: '#7B1FA2',
-    gridColor: 'rgba(200, 100, 255, 0.1)'
-  }
-};
+      function startDropSpawning() {
+        if (dropInterval) clearInterval(dropInterval);
+        
+        const scheduleNextDrop = () => {
+          const delay = 8000 + Math.random() * 4000;
+          setTimeout(() => {
+            spawnDrop();
+            scheduleNextDrop();
+          }, delay);
+        };
+        
+        setTimeout(() => {
+          spawnDrop();
+          scheduleNextDrop();
+        }, 6000);
+      }
 
-let currentEvent = null;
-let eventStartTime = 0;
-let eventInterval = null;
+      function spawnHealingPad() {
+        if (gameState !== "playing") return;
+        if (camps.length > 0) return;
+        
+        const colors = ["#1565C0", "#C62828", "#2E7D32", "#F57C00"];
+        const randomColor = colors[Math.floor(Math.random() * colors.length)];
+        
+        let x, y, attempts = 0;
+        do {
+          x = 100 + Math.random() * (canvas.width - 280);
+          y = 100 + Math.random() * (canvas.height - 280);
+          attempts++;
+        } while (attempts < 50 && isColliding(x + 40, y + 40, 40));
+        
+        camps.push({
+          x: x,
+          y: y,
+          w: 80,
+          h: 80,
+          color: randomColor,
+          spawnTime: Date.now(),
+          duration: 12000
+        });
+        
+        // 🔊 SOUND: Healing pad spawned
+        audioManager.play('powerup', { volume: 0.3 });
+      }
 
-// Track player-specific event states
-// players[id].onFire = { startTime, wallX, wallY }
-// players[id].frozen = { startTime, frozenUntil }
-
-function startArenaEvents() {
-  if (eventInterval) clearInterval(eventInterval);
-  
-  const scheduleNextEvent = () => {
-    // Events happen after game has been running for a bit
-    // Random interval: 25-40 seconds between events
-    const delay = 25000 + Math.random() * 15000;
-    
-    setTimeout(() => {
-      spawnArenaEvent();
-      scheduleNextEvent();
-    }, delay);
-  };
-  
-  // First event after 30 seconds of gameplay
-  setTimeout(() => {
-    spawnArenaEvent();
-    scheduleNextEvent();
-  }, 30000);
-}
-
-function spawnArenaEvent() {
-  if (gameState !== "playing") return;
-  if (currentEvent) return; // One event at a time
-  
-  // Pick random event
-  const eventKeys = Object.keys(ARENA_EVENTS);
-  const randomKey = eventKeys[Math.floor(Math.random() * eventKeys.length)];
-  const eventData = ARENA_EVENTS[randomKey];
-  
-  currentEvent = {
-    type: randomKey,
-    ...eventData
-  };
-  eventStartTime = Date.now();
-  
-  console.log(`🎮 EVENT STARTED: ${eventData.name}`);
-  
-  // Notify all players
-  ws.send(JSON.stringify({
-    type: 'arena_event',
-    event: randomKey,
-    name: eventData.name,
-    icon: eventData.icon,
-    duration: eventData.duration
-  }));
-  
-  // Auto-clear after duration
-  setTimeout(() => {
-    currentEvent = null;
-    console.log('✅ Event ended');
-    
-    // Notify phones event ended
-    ws.send(JSON.stringify({
-      type: 'arena_event_end'
-    }));
-  }, eventData.duration);
-}
-
-let activeDrops = [];
-
-function spawnDrop() {
-  if (gameState !== "playing") return;
-  
-  // Maximum 2 drops at once
-  if (activeDrops.length >= 2) return;
-  
-  // Pick random drop type
-  const dropKeys = Object.keys(DROP_TYPES);
-  const randomKey = dropKeys[Math.floor(Math.random() * dropKeys.length)];
-  const dropType = DROP_TYPES[randomKey];
-  
-  // Find safe spawn location
-  let x, y, attempts = 0;
-  do {
-    x = 150 + Math.random() * (canvas.width - 300);
-    y = 150 + Math.random() * (canvas.height - 300);
-    attempts++;
-  } while (attempts < 50 && isColliding(x, y, dropType.radius));
-  
-  activeDrops.push({
-    type: randomKey,
-    x, y,
-    spawnTime: Date.now(),
-    ...dropType
-  });
-  
-  console.log(`Spawned ${randomKey} drop at (${x}, ${y})`);
-}
-
-// Natural drop rhythm: every 8-12 seconds
-let dropInterval = null;
-function startDropSpawning() {
-  if (dropInterval) clearInterval(dropInterval);
-  
-  const scheduleNextDrop = () => {
-    const delay = 8000 + Math.random() * 4000; // 8-12 seconds
-    setTimeout(() => {
-      spawnDrop();
-      scheduleNextDrop();
-    }, delay);
-  };
-  // Spawn one random healing pad
-function spawnHealingPad() {
-  if (gameState !== "playing") return;
-  if (camps.length > 0) return; // Only one at a time
-  
-  const colors = ["#1565C0", "#C62828", "#2E7D32", "#F57C00"];
-  const randomColor = colors[Math.floor(Math.random() * colors.length)];
-  
-  let x, y, attempts = 0;
-  do {
-    x = 100 + Math.random() * (canvas.width - 280);
-    y = 100 + Math.random() * (canvas.height - 280);
-    attempts++;
-  } while (attempts < 50 && isColliding(x + 40, y + 40, 40));
-  
-  camps.push({
-    x: x,
-    y: y,
-    w: 80,
-    h: 80,
-    color: randomColor,
-    spawnTime: Date.now(),
-    duration: 12000 // 12 seconds
-  });
-  
-  console.log(`Spawned healing pad at (${x}, ${y})`);
-}
-
-// Start healing pad spawning
-let healingPadInterval = null;
-function startHealingPadSpawning() {
-  if (healingPadInterval) clearInterval(healingPadInterval);
-  
-  const scheduleNextPad = () => {
-    const delay = 10000 + Math.random() * 5000; // 10-15 seconds between pads
-    setTimeout(() => {
-      spawnHealingPad();
-      scheduleNextPad();
-    }, delay);
-  };
-  
-  // First pad after 8 seconds
-  setTimeout(() => {
-    spawnHealingPad();
-    scheduleNextPad();
-  }, 8000);
-}
-  
-  // First drop after 6 seconds
-  setTimeout(() => {
-    spawnDrop();
-    scheduleNextDrop();
-  }, 6000);
-}
-
-// Spawn one random healing pad
-        function spawnHealingPad() {
-          if (gameState !== "playing") return;
-          if (camps.length > 0) return; // Only one at a time
-          
-          const colors = ["#1565C0", "#C62828", "#2E7D32", "#F57C00"];
-          const randomColor = colors[Math.floor(Math.random() * colors.length)];
-          
-          let x, y, attempts = 0;
-          do {
-            x = 100 + Math.random() * (canvas.width - 280);
-            y = 100 + Math.random() * (canvas.height - 280);
-            attempts++;
-          } while (attempts < 50 && isColliding(x + 40, y + 40, 40));
-          
-          camps.push({
-            x: x,
-            y: y,
-            w: 80,
-            h: 80,
-            color: randomColor,
-            spawnTime: Date.now(),
-            duration: 12000 // 12 seconds
-          });
-          
-          console.log(`Spawned healing pad at (${x}, ${y})`);
-        }
-
-        // Start healing pad spawning
-        let healingPadInterval = null;
-        function startHealingPadSpawning() {
-          if (healingPadInterval) clearInterval(healingPadInterval);
-          
-          const scheduleNextPad = () => {
-            const delay = 10000 + Math.random() * 5000; // 10-15 seconds between pads
-            setTimeout(() => {
-              spawnHealingPad();
-              scheduleNextPad();
-            }, delay);
-          };
-          
-          // First pad after 8 seconds
+      function startHealingPadSpawning() {
+        if (healingPadInterval) clearInterval(healingPadInterval);
+        
+        const scheduleNextPad = () => {
+          const delay = 10000 + Math.random() * 5000;
           setTimeout(() => {
             spawnHealingPad();
             scheduleNextPad();
-          }, 8000);
-        }
+          }, delay);
+        };
+        
+        setTimeout(() => {
+          spawnHealingPad();
+          scheduleNextPad();
+        }, 8000);
+      }
+
+      function startArenaEvents() {
+        const scheduleNextEvent = () => {
+          const delay = 25000 + Math.random() * 15000;
+          
+          setTimeout(() => {
+            spawnArenaEvent();
+            scheduleNextEvent();
+          }, delay);
+        };
+        
+        setTimeout(() => {
+          spawnArenaEvent();
+          scheduleNextEvent();
+        }, 30000);
+      }
+
+      function spawnArenaEvent() {
+        if (gameState !== "playing") return;
+        if (currentEvent) return;
+        
+        const eventKeys = Object.keys(ARENA_EVENTS);
+        const randomKey = eventKeys[Math.floor(Math.random() * eventKeys.length)];
+        const eventData = ARENA_EVENTS[randomKey];
+        
+        currentEvent = {
+          type: randomKey,
+          ...eventData
+        };
+        eventStartTime = Date.now();
+        
+        ws.send(JSON.stringify({
+          type: 'arena_event',
+          event: randomKey,
+          name: eventData.name,
+          icon: eventData.icon,
+          duration: eventData.duration
+        }));
+        
+        setTimeout(() => {
+          currentEvent = null;
+          ws.send(JSON.stringify({
+            type: 'arena_event_end'
+          }));
+        }, eventData.duration);
+      }
 
       function isColliding(x, y, r) {
         for (const obs of obstacles) {
@@ -668,18 +661,8 @@ function startHealingPadSpawning() {
         return false;
       }
 
-      // Start power-up spawning // DA RIMUOVERE MI SA DIOCA
-      let powerUpInterval = null;
-      function startPowerUpSpawning() {
-        if (powerUpInterval) clearInterval(powerUpInterval);
-        powerUpInterval = setInterval(spawnPowerUp, POWERUP_SPAWN_INTERVAL);
-        // Spawn first one after 5 seconds
-        setTimeout(spawnPowerUp, 5000);
-      }
-
       initEnvironment();
 
-      // Map selection
       document.getElementById("mapSelect").onchange = (e) => {
         initEnvironment(e.target.value);
       };
@@ -715,6 +698,9 @@ function startHealingPadSpawning() {
           document.getElementById("status").style.color = "#ff4444";
           gameState = "waiting";
           waitingScreen.style.display = "block";
+          
+          // 🔊 SOUND: Stop music on disconnect
+          audioManager.stopBgMusic();
         };
       };
 
@@ -722,6 +708,8 @@ function startHealingPadSpawning() {
         switch (data.type) {
           case "player_joined":
             playerCountEl.textContent = `${data.totalPlayers} player${data.totalPlayers > 1 ? 's' : ''} connected`;
+            // 🔊 SOUND: Player joined
+            audioManager.play('playerJoined', { volume: 0.5 });
             break;
 
           case "character_selected":
@@ -736,7 +724,9 @@ function startHealingPadSpawning() {
             startArenaEvents();
             startHealingPadSpawning();
 
-            // Initialize players
+            // 🔊 SOUND: Start background music
+            audioManager.playBgMusic();
+
             data.players.forEach((p, i) => {
               const spawnPoints = [
                 { x: 100, y: 100 },
@@ -763,7 +753,6 @@ function startHealingPadSpawning() {
                 lastShot: 0,
                 lastHitBy: null,
                 isRespawning: false,
-                // Ability state
                 abilityCooldown: 0,
                 abilityActive: false,
                 abilityEndTime: 0,
@@ -772,7 +761,6 @@ function startHealingPadSpawning() {
               };
             });
 
-            // Notify phones that game started with map info
             ws.send(JSON.stringify({
               type: "game_update",
               players: Object.values(players).map(p => ({
@@ -792,19 +780,14 @@ function startHealingPadSpawning() {
               const player = players[data.playerId];
               let speedMod = 1;
               
-              // Check speed boost from drops
               if (player.speedBoostEnd && Date.now() < player.speedBoostEnd) {
                 speedMod = 2;
               }
               
-              // Check if frozen
               if (player.frozen && player.frozen.canMove === false) {
-                speedMod = 0; // Can't move!
+                speedMod = 0;
               }
-    
-    // GRAVITY CHAOS: inversion handled on phone side
               
-              // Dash ability
               if (player.abilityActive && CHARACTERS[player.character].ability.effect === "dash") {
                 speedMod = 4;
               }
@@ -826,45 +809,35 @@ function startHealingPadSpawning() {
             }
             break;
 
-                // ============ ADD THIS NEW CASE ============
-    case "player_action":
-      const player = players[data.playerId];
-      if (!player) break;
-      
-      if (data.action === 'blow') {
-        // Extinguish fire
-        if (player.onFire) {
-          delete player.onFire;
-          
-          ws.send(JSON.stringify({
-            type: 'player_status',
-            playerId: player.id,
-            status: 'clear',
-            message: '✅ Fire extinguished!'
-          }));
-          
-          console.log(`💨 Player ${player.id} extinguished fire`);
-        }
-      }
-      
-      if (data.action === 'shake') {
-        // Break free from freeze
-        if (player.frozen) {
-          delete player.frozen;
-          delete player.blizzardExposure;
-          
-          ws.send(JSON.stringify({
-            type: 'player_status',
-            playerId: player.id,
-            status: 'clear',
-            message: '✅ Broke free from ice!'
-          }));
-          
-          console.log(`📱 Player ${player.id} broke free from freeze`);
-        }
-      }
-      break;
-    // ============================================
+          case "player_action":
+            const player = players[data.playerId];
+            if (!player) break;
+            
+            if (data.action === 'blow') {
+              if (player.onFire) {
+                delete player.onFire;
+                ws.send(JSON.stringify({
+                  type: 'player_status',
+                  playerId: player.id,
+                  status: 'clear',
+                  message: '✅ Fire extinguished!'
+                }));
+              }
+            }
+            
+            if (data.action === 'shake') {
+              if (player.frozen) {
+                delete player.frozen;
+                delete player.blizzardExposure;
+                ws.send(JSON.stringify({
+                  type: 'player_status',
+                  playerId: player.id,
+                  status: 'clear',
+                  message: '✅ Broke free from ice!'
+                }));
+              }
+            }
+            break;
 
           case "player_left":
             delete players[data.playerId];
@@ -880,10 +853,8 @@ function startHealingPadSpawning() {
         const ability = char.ability;
         const now = Date.now();
         
-        // Check cooldown
         if (now < player.abilityCooldown) return;
         
-        // Set cooldown
         player.abilityCooldown = now + ability.cooldown;
         
         switch (ability.effect) {
@@ -895,7 +866,7 @@ function startHealingPadSpawning() {
           case "pierce":
             player.pierceNextShot = true;
             player.abilityActive = true;
-            player.abilityEndTime = now + 5000; // 5 seconds to use it
+            player.abilityEndTime = now + 5000;
             break;
             
           case "dash":
@@ -906,18 +877,16 @@ function startHealingPadSpawning() {
             
           case "heal":
             player.health = Math.min(player.maxHealth, player.health + player.maxHealth * 0.3);
+            // 🔊 SOUND: Heal ability
+            audioManager.play('collectPowerup', { volume: 0.6 });
             break;
             
           case "triple":
-            // Triple shot - fire 3 bullets with AUTO-AIM
             let tripleAngle = 0;
-            
-            // Find closest ALIVE enemy
             let tripleTarget = null;
             let tripleDist = Infinity;
             
             for (const enemy of Object.values(players)) {
-              // Skip: self, dead, respawning, eliminated
               if (enemy.id === playerId) continue;
               if (enemy.health <= 0) continue;
               if (enemy.lives <= 0) continue;
@@ -934,14 +903,12 @@ function startHealingPadSpawning() {
             }
             
             if (tripleTarget) {
-              // Aim at enemy
               tripleAngle = Math.atan2(tripleTarget.y - player.y, tripleTarget.x - player.x);
             } else {
-              // No enemy found - use movement direction or default to right
               if (Math.abs(player.vx) > 0.5 || Math.abs(player.vy) > 0.5) {
                 tripleAngle = Math.atan2(player.vy, player.vx);
               } else {
-                tripleAngle = 0; // Default: shoot right
+                tripleAngle = 0;
               }
             }
             
@@ -960,10 +927,12 @@ function startHealingPadSpawning() {
                 pierce: false
               });
             }
+            
+            // 🔊 SOUND: Triple shot
+            audioManager.play('laserGunfire', { volume: 0.7 });
             break;
         }
         
-        // Send update to player
         ws.send(JSON.stringify({
           type: "game_update",
           players: [{ id: playerId, abilityCooldown: player.abilityCooldown, abilityActive: player.abilityActive }]
@@ -980,12 +949,10 @@ function startHealingPadSpawning() {
         if (now - player.lastShot < char.stats.fireRate * 1000) return;
         player.lastShot = now;
 
-        // AUTO-AIM: Find closest ALIVE enemy
         let closestEnemy = null;
         let closestDist = Infinity;
         
         for (const enemy of Object.values(players)) {
-          // Skip: self, dead, respawning, eliminated
           if (enemy.id === playerId) continue;
           if (enemy.health <= 0) continue;
           if (enemy.lives <= 0) continue;
@@ -1004,14 +971,12 @@ function startHealingPadSpawning() {
         let dirX, dirY;
         
         if (closestEnemy) {
-          // Aim at closest enemy
           const dx = closestEnemy.x - player.x;
           const dy = closestEnemy.y - player.y;
           const len = Math.sqrt(dx * dx + dy * dy);
           dirX = dx / len;
           dirY = dy / len;
         } else {
-          // No enemies found - use movement direction or default to right
           if (Math.abs(player.vx) > 0.5 || Math.abs(player.vy) > 0.5) {
             const len = Math.sqrt(player.vx * player.vx + player.vy * player.vy);
             dirX = player.vx / len;
@@ -1038,6 +1003,9 @@ function startHealingPadSpawning() {
           color: char.color,
           pierce: isPiercing
         });
+
+        // 🔊 SOUND: Laser gunfire
+        audioManager.play('laserGunfire', { volume: 0.4 });
       }
 
       function isInZone(player, zone) {
@@ -1050,24 +1018,16 @@ function startHealingPadSpawning() {
 
         const now = Date.now();
 
-        // Update power-ups (remove expired)
-        powerUps = powerUps.filter(p => now - p.spawnTime < POWERUP_DURATION);
-
-        // Update players
         Object.values(players).forEach(player => {
-          // PRIMA: Check for death and respawn (deve essere processato anche se health <= 0)
           if (player.health <= 0 && player.lives > 0 && !player.isRespawning) {
-            // Player just died - start respawn process
             player.isRespawning = true;
             player.lives--;
             player.deaths++;
             
-            // Find killer and give kill credit
             if (player.lastHitBy && players[player.lastHitBy]) {
               players[player.lastHitBy].kills++;
             }
 
-            // Send death update to all
             ws.send(JSON.stringify({
               type: "game_update",
               players: Object.values(players).map(p => ({
@@ -1080,12 +1040,10 @@ function startHealingPadSpawning() {
               }))
             }));
 
-            // Check if this player is eliminated (0 lives)
             if (player.lives <= 0) {
               player.isRespawning = false;
               checkGameEnd();
             } else {
-              // Respawn after 3 seconds
               const playerId = player.id;
               setTimeout(() => {
                 if (!players[playerId]) return;
@@ -1106,7 +1064,9 @@ function startHealingPadSpawning() {
                 p.abilityCooldown = Date.now() + 2000;
                 p.lastHitBy = null;
                 
-                // Notify respawn
+                // 🔊 SOUND: Player respawn
+                audioManager.play('playerRespawn', { volume: 0.5 });
+                
                 ws.send(JSON.stringify({
                   type: "game_update",
                   players: [{
@@ -1120,19 +1080,15 @@ function startHealingPadSpawning() {
             }
           }
           
-          // Skip dead or eliminated players for movement/actions
           if (player.health <= 0 || player.lives <= 0) return;
 
-          // Check ability expiration
           if (player.abilityActive && now > player.abilityEndTime) {
             player.abilityActive = false;
           }
 
-          // Move
           const newX = player.x + player.vx;
           const newY = player.y + player.vy;
 
-          // Collision with walls
           let canMoveX = true, canMoveY = true;
 
           for (const obs of obstacles) {
@@ -1147,125 +1103,94 @@ function startHealingPadSpawning() {
           if (canMoveX) player.x = Math.max(player.r, Math.min(canvas.width - player.r, newX));
           if (canMoveY) player.y = Math.max(player.r, Math.min(canvas.height - player.r, newY));
 
-          // Friction
           player.vx *= 0.92;
           player.vy *= 0.92;
 
-          // ============ ARENA EVENT EFFECTS ============
-if (currentEvent) {
-  const eventAge = Date.now() - eventStartTime;
-  
-  if (currentEvent.type === 'INFERNO') {
-    // Check if player touches walls while event is active
-    let touchingWall = false;
-    
-    for (const obs of obstacles) {
-      const closestX = Math.max(obs.x, Math.min(player.x, obs.x + obs.w));
-      const closestY = Math.max(obs.y, Math.min(player.y, obs.y + obs.h));
-      const dx = player.x - closestX;
-      const dy = player.y - closestY;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      
-      if (dist < player.r + 15) { // Close to wall
-        touchingWall = true;
-        break;
-      }
-    }
-    
-    if (touchingWall && !player.onFire) {
-      // Catch fire!
-      player.onFire = {
-        startTime: Date.now(),
-        damage: 8 // DPS
-      };
-      
-      // Notify player
-      ws.send(JSON.stringify({
-        type: 'player_status',
-        playerId: player.id,
-        status: 'on_fire',
-        message: '🔥 YOU ARE ON FIRE! BLOW TO EXTINGUISH!'
-      }));
-    }
-  }
-  
-  if (currentEvent.type === 'BLIZZARD') {
-    // Check if player is NOT protected by walls
-    let protectedByWall = false;
-    
-    // Blizzard comes from the left side
-    const blizzardOriginX = 0;
-    const blizzardOriginY = canvas.height / 2;
-    
-    // Check if any wall blocks the blizzard path to player
-    for (const obs of obstacles) {
-      // Simple check: is obstacle between player and blizzard origin?
-      if (obs.x < player.x && obs.x + obs.w > blizzardOriginX) {
-        if (obs.y < player.y && obs.y + obs.h > player.y) {
-          protectedByWall = true;
-          break;
-        }
-      }
-    }
-    
-    if (!protectedByWall) {
-      // Exposed to blizzard
-      if (!player.blizzardExposure) {
-        player.blizzardExposure = 0;
-      }
-      player.blizzardExposure += 1;
-      
-      // After 3 seconds of exposure (180 frames), freeze
-      if (player.blizzardExposure > 180 && !player.frozen) {
-        player.frozen = {
-          startTime: Date.now(),
-          canMove: false
-        };
-        
-        ws.send(JSON.stringify({
-          type: 'player_status',
-          playerId: player.id,
-          status: 'frozen',
-          message: '❄️ YOU ARE FROZEN! SHAKE TO BREAK FREE!'
-        }));
-      }
-    } else {
-      // Protected - slowly reduce exposure
-      if (player.blizzardExposure) {
-        player.blizzardExposure = Math.max(0, player.blizzardExposure - 2);
-      }
-    }
-    
-    // If frozen, can't move
-    if (player.frozen && player.frozen.canMove === false) {
-      player.vx = 0;
-      player.vy = 0;
-    }
-  }
-  
-  if (currentEvent.type === 'GRAVITY_CHAOS') {
-    // Controls are already inverted on phone side
-    // No additional PC logic needed
-  }
-}
+          if (currentEvent) {
+            if (currentEvent.type === 'INFERNO') {
+              let touchingWall = false;
+              
+              for (const obs of obstacles) {
+                const closestX = Math.max(obs.x, Math.min(player.x, obs.x + obs.w));
+                const closestY = Math.max(obs.y, Math.min(player.y, obs.y + obs.h));
+                const dx = player.x - closestX;
+                const dy = player.y - closestY;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                if (dist < player.r + 15) {
+                  touchingWall = true;
+                  break;
+                }
+              }
+              
+              if (touchingWall && !player.onFire) {
+                player.onFire = {
+                  startTime: Date.now(),
+                  damage: 8
+                };
+                
+                ws.send(JSON.stringify({
+                  type: 'player_status',
+                  playerId: player.id,
+                  status: 'on_fire',
+                  message: '🔥 YOU ARE ON FIRE! BLOW TO EXTINGUISH!'
+                }));
+              }
+            }
+            
+            if (currentEvent.type === 'BLIZZARD') {
+              let protectedByWall = false;
+              const blizzardOriginX = 0;
+              const blizzardOriginY = canvas.height / 2;
+              
+              for (const obs of obstacles) {
+                if (obs.x < player.x && obs.x + obs.w > blizzardOriginX) {
+                  if (obs.y < player.y && obs.y + obs.h > player.y) {
+                    protectedByWall = true;
+                    break;
+                  }
+                }
+              }
+              
+              if (!protectedByWall) {
+                if (!player.blizzardExposure) {
+                  player.blizzardExposure = 0;
+                }
+                player.blizzardExposure += 1;
+                
+                if (player.blizzardExposure > 180 && !player.frozen) {
+                  player.frozen = {
+                    startTime: Date.now(),
+                    canMove: false
+                  };
+                  
+                  ws.send(JSON.stringify({
+                    type: 'player_status',
+                    playerId: player.id,
+                    status: 'frozen',
+                    message: '❄️ YOU ARE FROZEN! SHAKE TO BREAK FREE!'
+                  }));
+                }
+              } else {
+                if (player.blizzardExposure) {
+                  player.blizzardExposure = Math.max(0, player.blizzardExposure - 2);
+                }
+              }
+              
+              if (player.frozen && player.frozen.canMove === false) {
+                player.vx = 0;
+                player.vy = 0;
+              }
+            }
+          }
 
-// Apply fire damage (persists even after event ends)
-if (player.onFire) {
-  player.health -= player.onFire.damage / 60; // Per frame
-  
-  // Visual indication needed
-}
+          if (player.onFire) {
+            player.health -= player.onFire.damage / 60;
+          }
 
-// Check if player speed boost is active
-if (player.speedBoostEnd && Date.now() < player.speedBoostEnd) {
-  // Speed boost active - handled in movement multiplier check
-}
-
-          // Camp healing
-          // Camp healing - remove expired camps
           camps = camps.filter(camp => {
             const age = Date.now() - camp.spawnTime;
-            if (age > camp.duration) return false; // Remove expired
+            if (age > camp.duration) return false;
             
             if (isInZone(player, camp)) {
               player.health = Math.min(player.maxHealth, player.health + 0.5);
@@ -1273,7 +1198,6 @@ if (player.speedBoostEnd && Date.now() < player.speedBoostEnd) {
             return true;
           });
 
-          // Special zone effects
           specialZones.forEach(zone => {
             if (isInZone(player, zone)) {
               switch (zone.type) {
@@ -1289,60 +1213,53 @@ if (player.speedBoostEnd && Date.now() < player.speedBoostEnd) {
             }
           });
 
-          // Power-up collection
-// Drop collection
-activeDrops = activeDrops.filter(drop => {
-  const dx = player.x - drop.x;
-  const dy = player.y - drop.y;
-  const dist = Math.sqrt(dx * dx + dy * dy);
-  
-  if (dist < player.r + drop.radius) {
-    // Apply drop effect
-    switch (drop.effect) {
-      case 'recharge_ability':
-        player.abilityCooldown = 0;
-        break;
-      case 'speed_boost':
-        player.speedBoostEnd = Date.now() + drop.boostDuration;
-        break;
-      case 'heal':
-        player.health = Math.min(player.maxHealth, player.health + drop.healAmount);
-        break;
-    }
-    
-    // Notify player
-    ws.send(JSON.stringify({
-      type: 'game_update',
-      players: [{ 
-        id: player.id, 
-        abilityCooldown: player.abilityCooldown,
-        health: player.health,
-        dropCollected: drop.type
-      }]
-    }));
-    
-    if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
-    
-    return false; // Remove drop
-  }
-  
-  // Remove expired drops
-  const age = Date.now() - drop.spawnTime;
-  return age < drop.duration;
-});
+          activeDrops = activeDrops.filter(drop => {
+            const dx = player.x - drop.x;
+            const dy = player.y - drop.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            if (dist < player.r + drop.radius) {
+              switch (drop.effect) {
+                case 'recharge_ability':
+                  player.abilityCooldown = 0;
+                  break;
+                case 'speed_boost':
+                  player.speedBoostEnd = Date.now() + drop.boostDuration;
+                  break;
+                case 'heal':
+                  player.health = Math.min(player.maxHealth, player.health + drop.healAmount);
+                  break;
+              }
+              
+              // 🔊 SOUND: Collect powerup
+              audioManager.play('collectPowerup', { volume: 0.6 });
+              
+              ws.send(JSON.stringify({
+                type: 'game_update',
+                players: [{ 
+                  id: player.id, 
+                  abilityCooldown: player.abilityCooldown,
+                  health: player.health,
+                  dropCollected: drop.type
+                }]
+              }));
+              
+              return false;
+            }
+            
+            const age = Date.now() - drop.spawnTime;
+            return age < drop.duration;
+          });
         });
 
-        // Update bullets
         bullets = bullets.filter(bullet => {
           bullet.x += bullet.vx;
           bullet.y += bullet.vy;
 
-          // Out of bounds
           if (bullet.x < 0 || bullet.x > canvas.width || bullet.y < 0 || bullet.y > canvas.height) {
             return false;
           }
 
-          // Collision with obstacles (unless piercing)
           if (!bullet.pierce) {
             for (const obs of obstacles) {
               if (bullet.x > obs.x && bullet.x < obs.x + obs.w &&
@@ -1352,9 +1269,7 @@ activeDrops = activeDrops.filter(drop => {
             }
           }
 
-          // Collision with players
           for (let player of Object.values(players)) {
-            // Skip: own bullets, dead players, respawning players, eliminated players
             if (player.id === bullet.owner || player.health <= 0 || player.isRespawning || player.lives <= 0) continue;
 
             const dx = bullet.x - player.x;
@@ -1362,15 +1277,11 @@ activeDrops = activeDrops.filter(drop => {
             const dist = Math.sqrt(dx * dx + dy * dy);
 
             if (dist < player.r) {
-              // Check for shield
               if (player.abilityActive && CHARACTERS[player.character].ability.effect === "shield") {
-                // Blocked by shield
                 return false;
               }
               
-              // Check for dash invincibility
               if (player.abilityActive && CHARACTERS[player.character].ability.effect === "dash") {
-                // Invincible during dash
                 return false;
               }
               
@@ -1384,7 +1295,6 @@ activeDrops = activeDrops.filter(drop => {
           return true;
         });
 
-        // Check for game end periodically
         checkGameEnd();
       }
 
@@ -1394,13 +1304,14 @@ activeDrops = activeDrops.filter(drop => {
         const alivePlayers = Object.values(players).filter(p => p.lives > 0);
         const totalPlayers = Object.keys(players).length;
         
-        // Need at least 2 players to have started, and only 1 remaining
         if (totalPlayers > 1 && alivePlayers.length === 1) {
           gameState = "ended";
           const winner = alivePlayers[0];
           const winnerChar = CHARACTERS[winner.character];
           
-          // Send game end to all phones
+          // 🔊 SOUND: Stop music on game end
+          audioManager.stopBgMusic();
+          
           ws.send(JSON.stringify({
             type: "game_end",
             winner: winner.id,
@@ -1411,9 +1322,12 @@ activeDrops = activeDrops.filter(drop => {
           }));
         }
         
-        // Edge case: all players eliminated (draw)
         if (totalPlayers > 1 && alivePlayers.length === 0) {
           gameState = "ended";
+          
+          // 🔊 SOUND: Stop music
+          audioManager.stopBgMusic();
+          
           ws.send(JSON.stringify({
             type: "game_end",
             winner: null,
@@ -1434,11 +1348,9 @@ activeDrops = activeDrops.filter(drop => {
       function draw() {
         const map = MAPS[currentMap];
         
-        // Clear with fade effect
         ctx.fillStyle = map.background + "4D";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Draw grid
         ctx.strokeStyle = map.gridColor;
         ctx.lineWidth = 1;
         for (let i = 0; i < canvas.width; i += 50) {
@@ -1454,7 +1366,6 @@ activeDrops = activeDrops.filter(drop => {
           ctx.stroke();
         }
 
-        // Draw special zones
         specialZones.forEach(zone => {
           ctx.fillStyle = zone.color + "30";
           ctx.fillRect(zone.x, zone.y, zone.w, zone.h);
@@ -1464,16 +1375,14 @@ activeDrops = activeDrops.filter(drop => {
           ctx.strokeRect(zone.x, zone.y, zone.w, zone.h);
           ctx.setLineDash([]);
 
-          // Draw zone icon
           ctx.font = "bold 24px Arial";
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
           ctx.fillStyle = zone.color;
-          const icon = zone.type === "speed" ? "⚡" : zone.type === "damage" ? "☠️" : zone.type === "heal" ? "💚" : "🐌";
+          const icon = zone.type === "speed" ? "⚡" : zone.type === "damage" ? "☠️" : zone.type === "heal" ? "💚" : "🌀";
           ctx.fillText(icon, zone.x + zone.w/2, zone.y + zone.h/2);
         });
 
-        // Draw camps
         camps.forEach(camp => {
           ctx.fillStyle = camp.color + "40";
           ctx.fillRect(camp.x, camp.y, camp.w, camp.h);
@@ -1488,68 +1397,55 @@ activeDrops = activeDrops.filter(drop => {
           ctx.fillText("+", camp.x + camp.w / 2, camp.y + camp.h / 2);
         });
 
-        // Draw obstacles
-        // Draw obstacles
         obstacles.forEach(obs => {
           ctx.fillStyle = obs.color;
           ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
           
-          // Change border color during Inferno
           if (currentEvent && currentEvent.type === 'INFERNO') {
-            ctx.strokeStyle = "#FF0000"; // Red border during fire event
+            ctx.strokeStyle = "#FF0000";
             ctx.lineWidth = 3;
           } else {
-            ctx.strokeStyle = "#546E7A"; // Normal grey border
+            ctx.strokeStyle = "#546E7A";
             ctx.lineWidth = 2;
           }
           ctx.strokeRect(obs.x, obs.y, obs.w, obs.h);
 
-          // Texture
           ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
           for (let i = 0; i < 5; i++) {
             ctx.fillRect(obs.x + Math.random() * obs.w, obs.y + Math.random() * obs.h, 3, 3);
           }
         });
 
-        // Draw power-ups
-        // Draw drops
-activeDrops.forEach(drop => {
-  const age = Date.now() - drop.spawnTime;
-  const pulse = 1 + Math.sin(age / 200) * 0.2;
-  const alpha = age > drop.duration - 2000 ? Math.sin(age / 100) * 0.5 + 0.5 : 1;
-  
-  ctx.globalAlpha = alpha;
-  
-  // Glow
-  ctx.shadowColor = drop.color;
-  ctx.shadowBlur = 20;
-  
-  // Outer ring
-  ctx.strokeStyle = drop.color;
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.arc(drop.x, drop.y, drop.radius * pulse, 0, Math.PI * 2);
-  ctx.stroke();
-  
-  // Inner fill
-  ctx.fillStyle = drop.color + '60';
-  ctx.beginPath();
-  ctx.arc(drop.x, drop.y, drop.radius * pulse * 0.7, 0, Math.PI * 2);
-  ctx.fill();
-  
-  // Icon
-  ctx.shadowBlur = 0;
-  ctx.fillStyle = '#fff';
-  ctx.font = 'bold 20px Arial';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(drop.icon, drop.x, drop.y);
-  
-  ctx.globalAlpha = 1;
-});
-ctx.shadowBlur = 0;
+        activeDrops.forEach(drop => {
+          const age = Date.now() - drop.spawnTime;
+          const pulse = 1 + Math.sin(age / 200) * 0.2;
+          const alpha = age > drop.duration - 2000 ? Math.sin(age / 100) * 0.5 + 0.5 : 1;
+          
+          ctx.globalAlpha = alpha;
+          ctx.shadowColor = drop.color;
+          ctx.shadowBlur = 20;
+          ctx.strokeStyle = drop.color;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(drop.x, drop.y, drop.radius * pulse, 0, Math.PI * 2);
+          ctx.stroke();
+          
+          ctx.fillStyle = drop.color + '60';
+          ctx.beginPath();
+          ctx.arc(drop.x, drop.y, drop.radius * pulse * 0.7, 0, Math.PI * 2);
+          ctx.fill();
+          
+          ctx.shadowBlur = 0;
+          ctx.fillStyle = '#fff';
+          ctx.font = 'bold 20px Arial';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(drop.icon, drop.x, drop.y);
+          
+          ctx.globalAlpha = 1;
+        });
+        ctx.shadowBlur = 0;
 
-        // Draw bullets
         bullets.forEach(bullet => {
           ctx.fillStyle = bullet.color;
           ctx.shadowColor = bullet.color;
@@ -1558,7 +1454,6 @@ ctx.shadowBlur = 0;
           ctx.arc(bullet.x, bullet.y, bullet.pierce ? 8 : 5, 0, Math.PI * 2);
           ctx.fill();
           
-          // Piercing trail
           if (bullet.pierce) {
             ctx.strokeStyle = bullet.color + "60";
             ctx.lineWidth = 4;
@@ -1570,93 +1465,80 @@ ctx.shadowBlur = 0;
         });
         ctx.shadowBlur = 0;
 
-        // ============ EVENT VISUAL EFFECTS ============
-if (currentEvent) {
-  const map = MAPS[currentMap];
-  
-  // Background tint
-  ctx.fillStyle = currentEvent.backgroundTint;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  
-  if (currentEvent.type === 'INFERNO') {
-    // Tint obstacles red
-    obstacles.forEach(obs => {
-      ctx.fillStyle = currentEvent.wallColor + '40';
-      ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
-    });
-    
-    // Flame particles
-    for (let i = 0; i < 20; i++) {
-      const x = Math.random() * canvas.width;
-      const y = canvas.height - (Date.now() / 10 + i * 50) % canvas.height;
-      const size = 5 + Math.random() * 10;
-      
-      ctx.fillStyle = `rgba(255, ${100 + Math.random() * 100}, 0, 0.6)`;
-      ctx.beginPath();
-      ctx.arc(x, y, size, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  }
-  
-  if (currentEvent.type === 'BLIZZARD') {
-    // Tint obstacles blue
-    obstacles.forEach(obs => {
-      ctx.fillStyle = currentEvent.wallColor + '40';
-      ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
-    });
-    
-    // Snow particles from left
-    for (let i = 0; i < 100; i++) {
-      const windSpeed = 3;
-      const x = ((Date.now() / 20) * windSpeed + i * 30) % (canvas.width + 100) - 100;
-      const y = (i * 17) % canvas.height;
-      
-      ctx.fillStyle = currentEvent.particleColor;
-      ctx.fillRect(x, y, 3, 8);
-    }
-  }
-  
-  if (currentEvent.type === 'GRAVITY_CHAOS') {
-    // Distorted grid
-    ctx.strokeStyle = currentEvent.gridColor;
-    ctx.lineWidth = 2;
-    const waveOffset = Math.sin(Date.now() / 200) * 20;
-    
-    for (let i = 0; i < canvas.width; i += 50) {
-      ctx.beginPath();
-      ctx.moveTo(i + waveOffset, 0);
-      ctx.lineTo(i - waveOffset, canvas.height);
-      ctx.stroke();
-    }
-    
-    // Tint obstacles purple
-    obstacles.forEach(obs => {
-      ctx.fillStyle = currentEvent.wallColor + '30';
-      ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
-    });
-  }
-  
-  // Event timer bar at top
-  const eventAge = Date.now() - eventStartTime;
-  const timeLeft = currentEvent.duration - eventAge;
-  const progress = timeLeft / currentEvent.duration;
-  
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-  ctx.fillRect(canvas.width/2 - 200, 10, 400, 30);
-  
-  ctx.fillStyle = '#ff4500';
-  ctx.fillRect(canvas.width/2 - 195, 15, 390 * progress, 20);
-  
-  ctx.fillStyle = '#fff';
-  ctx.font = 'bold 16px Arial';
-  ctx.textAlign = 'center';
-  ctx.fillText(`${currentEvent.icon} ${currentEvent.name} - ${Math.ceil(timeLeft/1000)}s`, canvas.width/2, 28);
-}
+        if (currentEvent) {
+          ctx.fillStyle = currentEvent.backgroundTint;
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          
+          if (currentEvent.type === 'INFERNO') {
+            obstacles.forEach(obs => {
+              ctx.fillStyle = currentEvent.wallColor + '40';
+              ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+            });
+            
+            for (let i = 0; i < 20; i++) {
+              const x = Math.random() * canvas.width;
+              const y = canvas.height - (Date.now() / 10 + i * 50) % canvas.height;
+              const size = 5 + Math.random() * 10;
+              
+              ctx.fillStyle = `rgba(255, ${100 + Math.random() * 100}, 0, 0.6)`;
+              ctx.beginPath();
+              ctx.arc(x, y, size, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+          
+          if (currentEvent.type === 'BLIZZARD') {
+            obstacles.forEach(obs => {
+              ctx.fillStyle = currentEvent.wallColor + '40';
+              ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+            });
+            
+            for (let i = 0; i < 100; i++) {
+              const windSpeed = 3;
+              const x = ((Date.now() / 20) * windSpeed + i * 30) % (canvas.width + 100) - 100;
+              const y = (i * 17) % canvas.height;
+              
+              ctx.fillStyle = currentEvent.particleColor;
+              ctx.fillRect(x, y, 3, 8);
+            }
+          }
+          
+          if (currentEvent.type === 'GRAVITY_CHAOS') {
+            ctx.strokeStyle = currentEvent.gridColor;
+            ctx.lineWidth = 2;
+            const waveOffset = Math.sin(Date.now() / 200) * 20;
+            
+            for (let i = 0; i < canvas.width; i += 50) {
+              ctx.beginPath();
+              ctx.moveTo(i + waveOffset, 0);
+              ctx.lineTo(i - waveOffset, canvas.height);
+              ctx.stroke();
+            }
+            
+            obstacles.forEach(obs => {
+              ctx.fillStyle = currentEvent.wallColor + '30';
+              ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+            });
+          }
+          
+          const eventAge = Date.now() - eventStartTime;
+          const timeLeft = currentEvent.duration - eventAge;
+          const progress = timeLeft / currentEvent.duration;
+          
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+          ctx.fillRect(canvas.width/2 - 200, 10, 400, 30);
+          
+          ctx.fillStyle = '#ff4500';
+          ctx.fillRect(canvas.width/2 - 195, 15, 390 * progress, 20);
+          
+          ctx.fillStyle = '#fff';
+          ctx.font = 'bold 16px Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText(`${currentEvent.icon} ${currentEvent.name} - ${Math.ceil(timeLeft/1000)}s`, canvas.width/2, 28);
+        }
 
-        // Draw players
         Object.values(players).forEach(player => {
           if (player.lives <= 0) {
-            // Eliminated - show X
             ctx.fillStyle = "#666";
             ctx.font = "bold 40px Arial";
             ctx.textAlign = "center";
@@ -1666,7 +1548,6 @@ if (currentEvent) {
           }
           
           if (player.health <= 0) {
-            // Dead but has lives - tombstone
             ctx.fillStyle = "#424242";
             ctx.fillRect(player.x - 15, player.y - 10, 30, 35);
             ctx.fillStyle = "#616161";
@@ -1678,7 +1559,6 @@ if (currentEvent) {
             ctx.textAlign = "center";
             ctx.fillText("💀", player.x, player.y + 5);
             
-            // Lives remaining
             ctx.fillStyle = "#ff4444";
             ctx.font = "12px Arial";
             ctx.fillText(`${player.lives} ❤️`, player.x, player.y + 30);
@@ -1688,13 +1568,11 @@ if (currentEvent) {
           const char = CHARACTERS[player.character];
           const ability = char.ability;
 
-          // Draw shadow
           ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
           ctx.beginPath();
           ctx.ellipse(player.x, player.y + player.r + 5, player.r, player.r * 0.3, 0, 0, Math.PI * 2);
           ctx.fill();
 
-          // Shield effect
           if (player.abilityActive && ability.effect === "shield") {
             ctx.strokeStyle = "#00ffff";
             ctx.lineWidth = 4;
@@ -1706,7 +1584,6 @@ if (currentEvent) {
             ctx.shadowBlur = 0;
           }
 
-          // Dash effect
           if (player.abilityActive && ability.effect === "dash") {
             ctx.fillStyle = char.color + "40";
             for (let i = 1; i <= 3; i++) {
@@ -1716,7 +1593,6 @@ if (currentEvent) {
             }
           }
 
-          // Piercing indicator
           if (player.pierceNextShot) {
             ctx.strokeStyle = "#ff00ff";
             ctx.lineWidth = 2;
@@ -1727,44 +1603,40 @@ if (currentEvent) {
             ctx.setLineDash([]);
           }
 
-          // Fire effect
-if (player.onFire) {
-  for (let i = 0; i < 5; i++) {
-    const angle = Math.random() * Math.PI * 2;
-    const dist = player.r + Math.random() * 10;
-    const fx = player.x + Math.cos(angle) * dist;
-    const fy = player.y + Math.sin(angle) * dist - Math.random() * 20;
-    
-    ctx.fillStyle = `rgba(255, ${100 + Math.random() * 100}, 0, ${0.5 + Math.random() * 0.5})`;
-    ctx.beginPath();
-    ctx.arc(fx, fy, 3 + Math.random() * 4, 0, Math.PI * 2);
-    ctx.fill();
-  }
-}
+          if (player.onFire) {
+            for (let i = 0; i < 5; i++) {
+              const angle = Math.random() * Math.PI * 2;
+              const dist = player.r + Math.random() * 10;
+              const fx = player.x + Math.cos(angle) * dist;
+              const fy = player.y + Math.sin(angle) * dist - Math.random() * 20;
+              
+              ctx.fillStyle = `rgba(255, ${100 + Math.random() * 100}, 0, ${0.5 + Math.random() * 0.5})`;
+              ctx.beginPath();
+              ctx.arc(fx, fy, 3 + Math.random() * 4, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
 
-// Frozen effect
-if (player.frozen) {
-  ctx.strokeStyle = '#00BFFF';
-  ctx.lineWidth = 4;
-  ctx.shadowColor = '#00BFFF';
-  ctx.shadowBlur = 15;
-  
-  // Ice crystal shape
-  for (let i = 0; i < 6; i++) {
-    const angle = (Math.PI / 3) * i;
-    ctx.beginPath();
-    ctx.moveTo(player.x, player.y);
-    ctx.lineTo(
-      player.x + Math.cos(angle) * (player.r + 10),
-      player.y + Math.sin(angle) * (player.r + 10)
-    );
-    ctx.stroke();
-  }
-  
-  ctx.shadowBlur = 0;
-}
+          if (player.frozen) {
+            ctx.strokeStyle = '#00BFFF';
+            ctx.lineWidth = 4;
+            ctx.shadowColor = '#00BFFF';
+            ctx.shadowBlur = 15;
+            
+            for (let i = 0; i < 6; i++) {
+              const angle = (Math.PI / 3) * i;
+              ctx.beginPath();
+              ctx.moveTo(player.x, player.y);
+              ctx.lineTo(
+                player.x + Math.cos(angle) * (player.r + 10),
+                player.y + Math.sin(angle) * (player.r + 10)
+              );
+              ctx.stroke();
+            }
+            
+            ctx.shadowBlur = 0;
+          }
 
-          // Draw player shape
           ctx.fillStyle = char.color;
           ctx.shadowColor = char.color;
           ctx.shadowBlur = 20;
@@ -1810,7 +1682,6 @@ if (player.frozen) {
           ctx.fill();
           ctx.shadowBlur = 0;
 
-          // Health bar
           const barWidth = 50;
           const barHeight = 6;
           const healthPercent = player.health / player.maxHealth;
@@ -1825,7 +1696,6 @@ if (player.frozen) {
           ctx.lineWidth = 1;
           ctx.strokeRect(player.x - barWidth / 2, player.y - player.r - 15, barWidth, barHeight);
 
-          // Lives display
           ctx.fillStyle = "#ff4444";
           ctx.font = "10px Arial";
           ctx.textAlign = "center";
@@ -1833,18 +1703,15 @@ if (player.frozen) {
           for (let i = 0; i < player.lives; i++) hearts += "❤️";
           ctx.fillText(hearts, player.x, player.y - player.r - 22);
 
-          // Character name
           ctx.fillStyle = "#fff";
           ctx.font = "bold 12px Arial";
           ctx.textBaseline = "bottom";
           ctx.fillText(char.name, player.x, player.y - player.r - 32);
 
-          // Kill/death count
           ctx.fillStyle = "#FFD700";
           ctx.font = "10px Arial";
           ctx.fillText(`${player.kills}/${player.deaths}`, player.x, player.y + player.r + 15);
 
-          // Ability cooldown indicator
           const cooldownRemaining = Math.max(0, player.abilityCooldown - Date.now());
           if (cooldownRemaining > 0) {
             const cooldownPercent = cooldownRemaining / ability.cooldown;
@@ -1857,7 +1724,6 @@ if (player.frozen) {
           }
         });
 
-        // Scoreboard (only during gameplay, not when game ended)
         if (gameState !== "ended") {
           ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
           ctx.fillRect(10, 10, 260, 50 + Object.keys(players).length * 25);
@@ -1887,7 +1753,6 @@ if (player.frozen) {
             });
         }
 
-        // Game over screen
         if (gameState === "ended") {
           ctx.fillStyle = "rgba(0, 0, 0, 0.9)";
           ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -1901,11 +1766,9 @@ if (player.frozen) {
           if (winner) {
             const char = CHARACTERS[winner.character];
             
-            // Trophy icon - positioned higher
             ctx.font = "60px Arial";
             ctx.fillText("🏆", canvas.width/2, 80);
             
-            // Winner text with glow
             ctx.shadowColor = char.color;
             ctx.shadowBlur = 30;
             ctx.fillStyle = char.color;
@@ -1913,17 +1776,14 @@ if (player.frozen) {
             ctx.fillText("WINNER!", canvas.width/2, 160);
             ctx.shadowBlur = 0;
             
-            // Character name
             ctx.fillStyle = "#fff";
             ctx.font = "bold 45px Arial";
             ctx.fillText(char.name, canvas.width/2, 230);
             
-            // Stats
             ctx.fillStyle = "#FFD700";
             ctx.font = "24px Arial";
             ctx.fillText(`${winner.kills} Kills | ${winner.deaths} Deaths`, canvas.width/2, 280);
             
-            // Draw winner shape with glow
             ctx.fillStyle = char.color;
             ctx.shadowColor = char.color;
             ctx.shadowBlur = 30;
@@ -1932,7 +1792,6 @@ if (player.frozen) {
             ctx.fill();
             ctx.shadowBlur = 0;
           } else {
-            // Draw - no winner
             ctx.fillStyle = "#ff6666";
             ctx.font = "bold 50px Arial";
             ctx.fillText("💀 DRAW! 💀", canvas.width/2, 150);
@@ -1941,7 +1800,6 @@ if (player.frozen) {
             ctx.fillText("All players eliminated", canvas.width/2, 210);
           }
           
-          // Final scoreboard - positioned below winner info
           const scoreboardY = winner ? 400 : 280;
           const scoreboardHeight = 40 + numPlayers * 28;
           

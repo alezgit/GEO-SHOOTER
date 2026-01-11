@@ -20,7 +20,6 @@
         color: white;
       }
 
-      /* ===== Background Animation ===== */
       .background {
         position: absolute;
         inset: 0;
@@ -42,7 +41,6 @@
         }
       }
 
-      /* ===== Main Layout ===== */
       .wrapper {
         position: relative;
         z-index: 1;
@@ -66,7 +64,6 @@
         backdrop-filter: blur(8px);
       }
 
-      /* ===== Title ===== */
       h1 {
         font-size: 3rem;
         letter-spacing: 3px;
@@ -82,7 +79,6 @@
         margin-bottom: 2.5rem;
       }
 
-      /* ===== Buttons ===== */
       .btn {
         display: flex;
         align-items: center;
@@ -101,6 +97,8 @@
         box-shadow: 0 6px 18px rgba(255, 69, 0, 0.5),
           inset 0 0 10px rgba(255, 255, 255, 0.1);
         transition: all 0.25s ease;
+        cursor: pointer;
+        border: none;
       }
 
       .btn.secondary {
@@ -118,7 +116,6 @@
         box-shadow: 0 10px 28px rgba(33, 150, 243, 0.7);
       }
 
-      /* ===== Footer Hint ===== */
       .hint {
         margin-top: 2.2rem;
         font-size: 0.85rem;
@@ -138,7 +135,29 @@
         );
       }
 
-      /* ===== Mobile tweaks ===== */
+      .audio-toggle {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: rgba(0, 0, 0, 0.6);
+        border: 2px solid rgba(255, 69, 0, 0.6);
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 1.5rem;
+        transition: all 0.3s;
+        z-index: 10;
+      }
+
+      .audio-toggle:hover {
+        transform: scale(1.1);
+        box-shadow: 0 0 20px rgba(255, 69, 0, 0.7);
+      }
+
       @media (max-width: 480px) {
         h1 {
           font-size: 2.4rem;
@@ -153,6 +172,8 @@
 
   <body>
     <div class="background"></div>
+
+    <button class="audio-toggle" id="audioToggle">🔊</button>
 
     <div class="wrapper">
       <div class="card">
@@ -174,5 +195,61 @@
         </div>
       </div>
     </div>
+
+    <audio id="bgMusic" loop>
+      <source src="sounds/bg-music.mp3" type="audio/mpeg" />
+    </audio>
+
+    <script>
+      const bgMusic = document.getElementById('bgMusic');
+      const audioToggle = document.getElementById('audioToggle');
+      let isMuted = true;
+
+      // Set initial volume
+      bgMusic.volume = 0.3;
+
+      // Auto-play on first user interaction
+      let hasInteracted = false;
+
+      function playMusic() {
+        if (!hasInteracted) {
+          hasInteracted = true;
+          bgMusic.play().catch(err => {
+            console.log('Auto-play blocked, waiting for user interaction');
+          });
+        }
+      }
+
+      // Try to play on any user interaction
+      document.body.addEventListener('click', playMusic, { once: true });
+      document.body.addEventListener('touchstart', playMusic, { once: true });
+
+      // Audio toggle button
+      audioToggle.onclick = (e) => {
+        e.stopPropagation();
+        isMuted = !isMuted;
+        
+        if (isMuted) {
+          bgMusic.pause();
+          audioToggle.textContent = '🔇';
+        } else {
+          bgMusic.play().catch(err => {
+            console.log('Failed to play music:', err);
+          });
+          audioToggle.textContent = '🔊';
+        }
+      };
+
+      // Play hover sound on buttons (if you want to add it later)
+      const buttons = document.querySelectorAll('.btn');
+      buttons.forEach(btn => {
+        btn.addEventListener('mouseenter', () => {
+          // Optional: add hover sound effect here
+          // const hoverSound = new Audio('sounds/move-over-item.mp3');
+          // hoverSound.volume = 0.3;
+          // hoverSound.play();
+        });
+      });
+    </script>
   </body>
 </html>
