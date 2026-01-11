@@ -19,9 +19,15 @@ if (!FORCE_HTTP_MODE) {
   try {
     // Try multiple paths for certificates
     const certPaths = [
-      { cert: path.join(__dirname, "..", "certs", "cert.pem"), key: path.join(__dirname, "..", "certs", "key.pem") },
-      { cert: path.join(__dirname, "certs", "cert.pem"), key: path.join(__dirname, "certs", "key.pem") },
-      { cert: "./certs/cert.pem", key: "./certs/key.pem" }
+      {
+        cert: path.join(__dirname, "..", "certs", "cert.pem"),
+        key: path.join(__dirname, "..", "certs", "key.pem"),
+      },
+      {
+        cert: path.join(__dirname, "certs", "cert.pem"),
+        key: path.join(__dirname, "certs", "key.pem"),
+      },
+      { cert: "./certs/cert.pem", key: "./certs/key.pem" },
     ];
 
     let certPath = null;
@@ -38,7 +44,7 @@ if (!FORCE_HTTP_MODE) {
     if (certPath && keyPath) {
       const httpsOptions = {
         key: fs.readFileSync(keyPath),
-        cert: fs.readFileSync(certPath)
+        cert: fs.readFileSync(certPath),
       };
       httpsServer = https.createServer(httpsOptions, app);
       useHttps = true;
@@ -66,21 +72,15 @@ const rooms = {}; // { roomId: { pc: ws, players: [{ id, ws, character, ready }]
 app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/", (req, res) => {
-  res.send(`
-    <h2>⚔️ Battle Arena - War Game</h2>
-    <p><a href="/pc">Open PC game (Display)</a></p>
-    <p><a href="/phone">Open phone controller (Play)</a></p>
-  `);
+  res.sendFile(path.join(__dirname, "public", "landing.html"));
 });
 
 app.get("/pc", (req, res) =>
-  res.sendFile(path.join(__dirname, "public", "GEO-SHOOTER.html"))
+  res.sendFile(path.join(__dirname, "public", "GEOSHOOTER.html"))
 );
 
 app.get("/phone", (req, res) =>
-  res.sendFile(
-    path.join(__dirname, "public", "controller_GEOSHOOTER.html")
-  )
+  res.sendFile(path.join(__dirname, "public", "controller_GEOSHOOTER.html"))
 );
 
 wss.on("connection", (ws) => {
@@ -100,7 +100,9 @@ wss.on("connection", (ws) => {
           ws.room = roomId;
           console.log(`PC display joined room ${roomId}`);
         } else if (data.role === "phone") {
-          const playerId = `player_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          const playerId = `player_${Date.now()}_${Math.random()
+            .toString(36)
+            .substr(2, 9)}`;
           const player = { id: playerId, ws, character: null, ready: false };
           rooms[roomId].players.push(player);
           ws.playerId = playerId;
@@ -113,52 +115,60 @@ wss.on("connection", (ws) => {
 
           // Notify PC of new player
           if (rooms[roomId].pc) {
-            rooms[roomId].pc.send(JSON.stringify({
-              type: "player_joined",
-              playerId,
-              totalPlayers: rooms[roomId].players.length
-            }));
+            rooms[roomId].pc.send(
+              JSON.stringify({
+                type: "player_joined",
+                playerId,
+                totalPlayers: rooms[roomId].players.length,
+              })
+            );
           }
         }
       } else if (data.type === "character_select") {
         // Player selected a character
         const room = rooms[ws.room];
         if (room) {
-          const player = room.players.find(p => p.id === ws.playerId);
+          const player = room.players.find((p) => p.id === ws.playerId);
           if (player) {
             player.character = data.character;
             player.ready = true;
 
             // Broadcast to PC
             if (room.pc) {
-              room.pc.send(JSON.stringify({
-                type: "character_selected",
-                playerId: ws.playerId,
-                character: data.character
-              }));
+              room.pc.send(
+                JSON.stringify({
+                  type: "character_selected",
+                  playerId: ws.playerId,
+                  character: data.character,
+                })
+              );
             }
 
             // Check if all players are ready
-            const allReady = room.players.every(p => p.ready);
+            const allReady = room.players.every((p) => p.ready);
             if (allReady && room.players.length > 0) {
               // Start game
-              const playerData = room.players.map(p => ({
+              const playerData = room.players.map((p) => ({
                 id: p.id,
-                character: p.character
+                character: p.character,
               }));
 
               if (room.pc) {
-                room.pc.send(JSON.stringify({
-                  type: "game_start",
-                  players: playerData
-                }));
+                room.pc.send(
+                  JSON.stringify({
+                    type: "game_start",
+                    players: playerData,
+                  })
+                );
               }
 
-              room.players.forEach(p => {
-                p.ws.send(JSON.stringify({
-                  type: "game_start",
-                  players: playerData
-                }));
+              room.players.forEach((p) => {
+                p.ws.send(
+                  JSON.stringify({
+                    type: "game_start",
+                    players: playerData,
+                  })
+                );
               });
             }
           }
@@ -167,30 +177,36 @@ wss.on("connection", (ws) => {
         // Movement from phone
         const room = rooms[ws.room];
         if (room && room.pc) {
-          room.pc.send(JSON.stringify({
-            type: "player_move",
-            playerId: ws.playerId,
-            ax: data.ax,
-            ay: data.ay
-          }));
+          room.pc.send(
+            JSON.stringify({
+              type: "player_move",
+              playerId: ws.playerId,
+              ax: data.ax,
+              ay: data.ay,
+            })
+          );
         }
       } else if (data.type === "shoot") {
         // Player shoots
         const room = rooms[ws.room];
         if (room && room.pc) {
-          room.pc.send(JSON.stringify({
-            type: "player_shoot",
-            playerId: ws.playerId
-          }));
+          room.pc.send(
+            JSON.stringify({
+              type: "player_shoot",
+              playerId: ws.playerId,
+            })
+          );
         }
       } else if (data.type === "ability") {
         // Player uses ability
         const room = rooms[ws.room];
         if (room && room.pc) {
-          room.pc.send(JSON.stringify({
-            type: "player_ability",
-            playerId: ws.playerId
-          }));
+          room.pc.send(
+            JSON.stringify({
+              type: "player_ability",
+              playerId: ws.playerId,
+            })
+          );
         }
       } else if (data.type === "player_action") {
         // Player performs action (blow, shake, etc.)
@@ -207,7 +223,7 @@ wss.on("connection", (ws) => {
         // PC broadcasts game state to all players
         const room = rooms[ws.room];
         if (room && ws.role === "pc") {
-          room.players.forEach(p => {
+          room.players.forEach((p) => {
             p.ws.send(msg);
           });
         }
@@ -261,14 +277,16 @@ wss.on("connection", (ws) => {
         console.log(`PC disconnected from room ${ws.room}`);
       } else if (ws.role === "phone") {
         const room = rooms[ws.room];
-        room.players = room.players.filter(p => p.id !== ws.playerId);
+        room.players = room.players.filter((p) => p.id !== ws.playerId);
 
         // Notify PC
         if (room.pc) {
-          room.pc.send(JSON.stringify({
-            type: "player_left",
-            playerId: ws.playerId
-          }));
+          room.pc.send(
+            JSON.stringify({
+              type: "player_left",
+              playerId: ws.playerId,
+            })
+          );
         }
         console.log(`Player ${ws.playerId} disconnected from room ${ws.room}`);
       }
@@ -296,7 +314,9 @@ if (useHttps) {
     console.log(`   Local:   https://localhost:${HTTPS_PORT}`);
     console.log(`   Network: https://${localIp}:${HTTPS_PORT}`);
     console.log("\n📱 For iOS devices:");
-    console.log(`   1. On iPhone, go to: https://${localIp}:${HTTPS_PORT}/phone`);
+    console.log(
+      `   1. On iPhone, go to: https://${localIp}:${HTTPS_PORT}/phone`
+    );
     console.log(`   2. Accept the self-signed certificate warning`);
     console.log(`   3. Motion sensors will work!\n`);
     console.log("💡 Alternative: Use ngrok for a trusted certificate");
@@ -315,7 +335,9 @@ if (useHttps) {
       });
     });
 
-    console.log("\n⚠️  HTTP Server running (motion sensors won't work on iOS!)");
+    console.log(
+      "\n⚠️  HTTP Server running (motion sensors won't work on iOS!)"
+    );
     console.log(`   Local:   http://localhost:${PORT}`);
     console.log(`   Network: http://${localIp}:${PORT}`);
     console.log("\n📱 To enable motion sensors on iOS:");
