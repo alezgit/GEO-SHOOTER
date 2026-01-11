@@ -1,4 +1,4 @@
-// server.js
+ // server.js
 const express = require("express");
 const path = require("path");
 const http = require("http");
@@ -345,3 +345,5 @@ if (useHttps) {
     console.log("   2. Use ngrok: npx ngrok http 8080\n");
   });
 }
+
+// Export the server for testing
