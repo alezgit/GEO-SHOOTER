@@ -139,7 +139,7 @@
         position: absolute;
         top: 20px;
         right: 20px;
-        background: rgba(0, 0, 0, 0.6);
+        background: rgba(10, 14, 39, 0.85);
         border: 2px solid rgba(255, 69, 0, 0.6);
         border-radius: 50%;
         width: 50px;
@@ -151,11 +151,33 @@
         font-size: 1.5rem;
         transition: all 0.3s;
         z-index: 10;
+        backdrop-filter: blur(8px);
       }
 
       .audio-toggle:hover {
         transform: scale(1.1);
         box-shadow: 0 0 20px rgba(255, 69, 0, 0.7);
+      }
+
+      .features {
+        display: flex;
+        justify-content: center;
+        gap: 1.5rem;
+        margin-top: 1.5rem;
+        flex-wrap: wrap;
+      }
+
+      .feature {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.8rem;
+        color: #aaa;
+      }
+
+      .feature-icon {
+        font-size: 1.5rem;
       }
 
       @media (max-width: 480px) {
@@ -189,6 +211,25 @@
 
         <div class="divider"></div>
 
+        <div class="features">
+          <div class="feature">
+            <span class="feature-icon">🎮</span>
+            <span>5 Characters</span>
+          </div>
+          <div class="feature">
+            <span class="feature-icon">🗺️</span>
+            <span>6 Maps</span>
+          </div>
+          <div class="feature">
+            <span class="feature-icon">⚡</span>
+            <span>Power-ups</span>
+          </div>
+          <div class="feature">
+            <span class="feature-icon">🌪️</span>
+            <span>Arena Events</span>
+          </div>
+        </div>
+
         <div class="hint">
           Open the game screen on a computer<br />
           Use your phone as the controller
@@ -205,10 +246,8 @@
       const audioToggle = document.getElementById('audioToggle');
       let isMuted = true;
 
-      // Set initial volume
       bgMusic.volume = 0.3;
 
-      // Auto-play on first user interaction
       let hasInteracted = false;
 
       function playMusic() {
@@ -220,11 +259,9 @@
         }
       }
 
-      // Try to play on any user interaction
       document.body.addEventListener('click', playMusic, { once: true });
       document.body.addEventListener('touchstart', playMusic, { once: true });
 
-      // Audio toggle button
       audioToggle.onclick = (e) => {
         e.stopPropagation();
         isMuted = !isMuted;
@@ -240,14 +277,10 @@
         }
       };
 
-      // Play hover sound on buttons (if you want to add it later)
       const buttons = document.querySelectorAll('.btn');
       buttons.forEach(btn => {
         btn.addEventListener('mouseenter', () => {
           // Optional: add hover sound effect here
-          // const hoverSound = new Audio('sounds/move-over-item.mp3');
-          // hoverSound.volume = 0.3;
-          // hoverSound.play();
         });
       });
     </script>

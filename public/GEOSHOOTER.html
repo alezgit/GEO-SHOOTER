@@ -9,25 +9,34 @@
         margin: 0;
         padding: 0;
         box-sizing: border-box;
+        font-family: "Segoe UI", system-ui, sans-serif;
       }
 
       body {
-        font-family: 'Arial', sans-serif;
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: center;
+        justify-content: flex-start;
         min-height: 100vh;
-        background: linear-gradient(135deg, #0a0e27, #1a1f3a);
+        background: radial-gradient(circle at top, #1a1f3a, #050816);
         color: #fff;
-        overflow: hidden;
+        overflow-x: hidden;
+        padding: 10px;
       }
 
       h1 {
-        margin: 15px 0;
+        margin: 10px 0;
         font-size: 2.5em;
-        text-shadow: 0 0 20px rgba(255, 69, 0, 0.8);
-        letter-spacing: 2px;
+        letter-spacing: 3px;
+        color: #ff6b35;
+        text-shadow: 0 0 15px rgba(255, 69, 0, 0.9), 0 0 35px rgba(255, 69, 0, 0.6);
+        transition: opacity 0.5s, transform 0.5s;
+      }
+
+      h1.hidden {
+        opacity: 0;
+        transform: translateY(-50px);
+        pointer-events: none;
       }
 
       #controls {
@@ -35,10 +44,14 @@
         display: flex;
         gap: 15px;
         align-items: center;
-        background: rgba(0, 0, 0, 0.5);
+        background: rgba(10, 14, 39, 0.85);
         padding: 15px 25px;
-        border-radius: 10px;
+        border-radius: 14px;
+        border: 2px solid rgba(255, 69, 0, 0.6);
         box-shadow: 0 0 30px rgba(255, 69, 0, 0.3);
+        backdrop-filter: blur(8px);
+        flex-wrap: wrap;
+        justify-content: center;
       }
 
       input#room {
@@ -57,15 +70,47 @@
         box-shadow: 0 0 15px rgba(255, 69, 0, 0.5);
       }
 
+      /* Stylized map selector */
       select#mapSelect {
-        padding: 10px 15px;
-        border-radius: 8px;
+        padding: 12px 20px;
+        border-radius: 10px;
         border: 2px solid #ff4500;
         outline: none;
-        font-size: 1em;
-        background: rgba(255, 255, 255, 0.1);
+        font-size: 1.1em;
+        font-weight: bold;
+        background: rgba(255, 69, 0, 0.15);
         color: #fff;
         cursor: pointer;
+        transition: all 0.3s;
+        text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+        min-width: 220px;
+      }
+
+      select#mapSelect:hover {
+        background: rgba(255, 69, 0, 0.25);
+        border-color: #ff6b35;
+        box-shadow: 0 0 20px rgba(255, 69, 0, 0.5);
+        transform: scale(1.02);
+      }
+
+      select#mapSelect:focus {
+        border-color: #00ff88;
+        box-shadow: 0 0 25px rgba(0, 255, 136, 0.6);
+      }
+
+      select#mapSelect option {
+        background: #1a1f3a;
+        color: #fff;
+        padding: 10px;
+        font-size: 1em;
+      }
+
+      select#mapSelect:disabled,
+      input#room:disabled,
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        filter: grayscale(0.5);
       }
 
       button {
@@ -77,13 +122,22 @@
         background: linear-gradient(135deg, #ff4500, #ff6b35);
         color: #fff;
         font-weight: bold;
-        transition: all 0.3s;
+        transition: all 0.25s;
         box-shadow: 0 4px 15px rgba(255, 69, 0, 0.4);
       }
 
       button:hover {
-        transform: translateY(-2px);
+        transform: translateY(-2px) scale(1.02);
         box-shadow: 0 6px 20px rgba(255, 69, 0, 0.6);
+      }
+
+      button.secondary {
+        background: linear-gradient(135deg, #2196f3, #00bcd4);
+        box-shadow: 0 4px 15px rgba(33, 150, 243, 0.4);
+      }
+
+      button.secondary:hover {
+        box-shadow: 0 6px 20px rgba(33, 150, 243, 0.6);
       }
 
       #audioControls {
@@ -94,6 +148,7 @@
 
       #volumeSlider {
         width: 80px;
+        accent-color: #ff4500;
       }
 
       #status {
@@ -102,8 +157,49 @@
         text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
       }
 
+      #mainContainer {
+        display: flex;
+        gap: 20px;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        justify-content: center;
+        transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      #mainContainer.fullscreen-mode {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        margin: 0;
+        padding: 0;
+        flex-wrap: nowrap;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        padding: 10px;
+        z-index: 100;
+      }
+
       #gameContainer {
         position: relative;
+        transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      #mainContainer.fullscreen-mode #gameContainer {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      #mainContainer.fullscreen-mode #gameContainer canvas {
+        width: 100% !important;
+        height: 100% !important;
+        max-width: 100vw;
+        max-height: calc(100vh - 230px);
+        object-fit: contain;
       }
 
       canvas {
@@ -111,6 +207,94 @@
         border-radius: 15px;
         box-shadow: 0 0 50px rgba(255, 69, 0, 0.4), inset 0 0 50px rgba(0, 0, 0, 0.5);
         display: block;
+        border: 2px solid rgba(255, 69, 0, 0.4);
+      }
+
+      #scoreboard {
+        background: rgba(10, 14, 39, 0.9);
+        border-radius: 14px;
+        border: 2px solid rgba(255, 69, 0, 0.6);
+        box-shadow: 0 0 30px rgba(255, 69, 0, 0.3);
+        padding: 20px;
+        min-width: 280px;
+        backdrop-filter: blur(8px);
+        transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      #mainContainer.fullscreen-mode #scoreboard {
+        position: static;
+        width: 100%;
+        max-width: 960px;
+        height: auto;
+        max-height: 200px;
+        overflow-y: auto;
+        padding: 15px 20px;
+      }
+
+      #mainContainer.fullscreen-mode #scoreList {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+      }
+
+      #mainContainer.fullscreen-mode #scoreList li {
+        flex: 0 1 auto;
+        min-width: 180px;
+        max-width: 220px;
+      }
+
+      #scoreboard h2 {
+        color: #ff6b35;
+        font-size: 1.4em;
+        margin-bottom: 10px;
+        text-shadow: 0 0 10px rgba(255, 69, 0, 0.6);
+        text-align: center;
+        letter-spacing: 2px;
+      }
+
+      #mapName {
+        color: #888;
+        font-size: 0.9em;
+        text-align: center;
+        margin-bottom: 15px;
+      }
+
+      #scoreList {
+        list-style: none;
+      }
+
+      #scoreList li {
+        padding: 8px 12px;
+        margin: 5px 0;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.05);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.95em;
+        transition: all 0.3s;
+      }
+
+      #scoreList li:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      #scoreList li.eliminated {
+        opacity: 0.5;
+        text-decoration: line-through;
+      }
+
+      .player-name {
+        font-weight: bold;
+      }
+
+      .player-stats {
+        color: #FFD700;
+      }
+
+      .player-lives {
+        color: #ff4444;
       }
 
       #waitingScreen {
@@ -119,11 +303,12 @@
         left: 50%;
         transform: translate(-50%, -50%);
         text-align: center;
-        background: rgba(0, 0, 0, 0.8);
+        background: rgba(10, 14, 39, 0.95);
         padding: 40px 60px;
-        border-radius: 20px;
-        border: 3px solid #ff4500;
+        border-radius: 22px;
+        border: 2px solid rgba(255, 69, 0, 0.6);
         box-shadow: 0 0 40px rgba(255, 69, 0, 0.6);
+        backdrop-filter: blur(8px);
       }
 
       #waitingScreen h2 {
@@ -136,35 +321,170 @@
       #waitingScreen p {
         font-size: 1.2em;
         margin: 10px 0;
+        color: #cfcfcf;
+      }
+
+      #gameEndScreen {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(5, 8, 22, 0.95);
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border-radius: 15px;
+        z-index: 10;
+      }
+
+      #gameEndScreen.visible {
+        display: flex;
+      }
+
+      #gameEndScreen h2 {
+        font-size: 3em;
+        margin-bottom: 10px;
+        text-shadow: 0 0 30px currentColor;
+      }
+
+      #gameEndScreen .winner-name {
+        font-size: 2.5em;
+        margin: 10px 0;
+        font-weight: bold;
+      }
+
+      #gameEndScreen .stats {
+        font-size: 1.5em;
+        color: #FFD700;
+        margin: 10px 0;
+      }
+
+      #gameEndScreen .final-scores {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 20px 40px;
+        border-radius: 14px;
+        margin: 20px 0;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      #gameEndScreen .final-scores h3 {
+        color: #fff;
+        margin-bottom: 15px;
+        font-size: 1.3em;
+      }
+
+      #gameEndScreen .score-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 30px;
+        padding: 8px 0;
+        font-size: 1.1em;
+      }
+
+      #restartBtn {
+        margin-top: 25px;
+        padding: 15px 40px;
+        font-size: 1.3em;
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+      }
+
+      .divider {
+        width: 80%;
+        height: 1px;
+        background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.4), transparent);
+        margin: 15px 0;
+      }
+
+      @media (max-width: 1400px) {
+        #mainContainer {
+          flex-direction: column;
+          align-items: center;
+        }
+
+        #scoreboard {
+          width: 100%;
+          max-width: 600px;
+        }
+
+        #scoreList {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+        }
+
+        #scoreList li {
+          flex: 1;
+          min-width: 200px;
+        }
       }
     </style>
   </head>
   <body>
-    <h1>⚔️ GEO-SHOOTER</h1>
+    <h1 id="mainTitle">🔫 GEO-SHOOTER</h1>
 
     <div id="controls">
-      <input id="room" placeholder="Enter Room ID" value="war123" />
-      <select id="mapSelect">
-        <option value="arena">🏟️ Arena</option>
-        <option value="maze">🌀 Maze</option>
-        <option value="fortress">🏰 Fortress</option>
-        <option value="chaos">💥 Chaos</option>
-      </select>
-      <button id="connectBtn">Connect</button>
-      <div id="audioControls">
-        <button id="muteBtn">🔊 Mute</button>
-        <input type="range" id="volumeSlider" min="0" max="100" value="70" />
+      <div style="display: flex; flex-direction: column; gap: 10px; align-items: center; width: 100%;">
+        <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap; justify-content: center;">
+          <input id="room" placeholder="Enter Room ID" value="war123" />
+          <select id="mapSelect">
+            <option value="training">🎯 Training Ground</option>
+            <option value="arena">🏟️ Classic Arena</option>
+            <option value="urban">🏙️ Urban Warfare</option>
+            <option value="crossfire">⚔️ Crossfire</option>
+            <option value="thepit">⭕ The Pit</option>
+            <option value="deathzone">💀 Death Zone</option>
+          </select>
+          <button id="connectBtn">Connect</button>
+          <div id="audioControls">
+            <button id="muteBtn">🔊</button>
+            <input type="range" id="volumeSlider" min="0" max="100" value="70" />
+          </div>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <span id="status">Not connected</span>
+          <span id="mapInfo" style="color: #ff6b35; font-weight: bold;"></span>
+        </div>
       </div>
-      <span id="status">Not connected</span>
     </div>
 
-    <div id="gameContainer">
-      <canvas id="gameCanvas" width="1200" height="700"></canvas>
-      <div id="waitingScreen">
-        <h2>⏳ Waiting for players...</h2>
-        <p id="playerCount">0 players connected</p>
-        <p id="readyStatus">Waiting for character selection</p>
-        <p id="mapInfo" style="color: #ff6b35; margin-top: 10px;">Map: Arena</p>
+    <div id="mainContainer">
+      <div id="gameContainer">
+        <canvas id="gameCanvas" width="1100" height="650"></canvas>
+        
+        <div id="waitingScreen">
+          <h2>⏳ Waiting for players...</h2>
+          <p id="playerCount">0 players connected</p>
+          <p id="readyStatus">Waiting for character selection</p>
+          <div class="divider" style="width: 80%; height: 1px; background: linear-gradient(to right, transparent, rgba(255, 107, 53, 0.4), transparent); margin: 20px auto;"></div>
+          <p style="color: #888; font-size: 0.9em; margin-bottom: 5px;">Selected Map:</p>
+          <p id="mapInfo" style="color: #ff6b35; font-size: 1.3em; font-weight: bold; margin-top: 5px;">🎯 Training Ground</p>
+        </div>
+
+        <div id="gameEndScreen">
+          <div id="trophyIcon" style="font-size: 4em;">🏆</div>
+          <h2 id="endTitle">WINNER!</h2>
+          <div id="winnerName" class="winner-name"></div>
+          <div id="winnerStats" class="stats"></div>
+          <div class="divider"></div>
+          <div class="final-scores">
+            <h3>FINAL SCORES</h3>
+            <div id="finalScoreList"></div>
+          </div>
+          <button id="restartBtn">🔄 PLAY AGAIN</button>
+        </div>
+      </div>
+
+      <div id="scoreboard">
+        <h2>📊 SCOREBOARD</h2>
+        <div id="mapName">Map: Training Ground</div>
+        <ul id="scoreList"></ul>
       </div>
     </div>
 
@@ -214,12 +534,8 @@
           if (this.isMuted || !this.soundsLoaded) return;
 
           const sound = this.sounds[soundName];
-          if (!sound) {
-            console.warn(`Sound not found: ${soundName}`);
-            return;
-          }
+          if (!sound) return;
 
-          // Clone audio for overlapping sounds
           const audioClone = sound.cloneNode();
           audioClone.volume = options.volume !== undefined ? options.volume * this.volume : this.volume;
           
@@ -231,7 +547,7 @@
         playBgMusic() {
           if (this.isMuted || !this.bgMusic) return;
           
-          this.bgMusic.volume = this.volume * 0.3; // Background music quieter
+          this.bgMusic.volume = this.volume * 0.3;
           this.bgMusic.play().catch(err => {
             console.warn('Failed to play background music', err);
           });
@@ -271,257 +587,565 @@
 
       const audioManager = new AudioManager();
 
-      // Audio controls
       document.getElementById('muteBtn').onclick = () => {
         const isMuted = audioManager.toggleMute();
-        document.getElementById('muteBtn').textContent = isMuted ? '🔇 Unmute' : '🔊 Mute';
+        document.getElementById('muteBtn').textContent = isMuted ? '🔇' : '🔊';
       };
 
       document.getElementById('volumeSlider').oninput = (e) => {
         audioManager.setVolume(e.target.value / 100);
       };
 
-      // Load audio on page load
       audioManager.loadSounds();
 
       // ============ GAME CODE ============
       const canvas = document.getElementById("gameCanvas");
       const ctx = canvas.getContext("2d");
       const waitingScreen = document.getElementById("waitingScreen");
+      const gameEndScreen = document.getElementById("gameEndScreen");
       const playerCountEl = document.getElementById("playerCount");
       const readyStatusEl = document.getElementById("readyStatus");
       const mapInfoEl = document.getElementById("mapInfo");
+      const scoreboardMapName = document.getElementById("mapName");
+      const scoreListEl = document.getElementById("scoreList");
 
       let ws, roomId;
       let gameState = "waiting";
       let players = {};
       let bullets = [];
       let obstacles = [];
+      let movingObstacles = [];
       let camps = [];
       let specialZones = [];
       let powerUps = [];
-      let currentMap = "arena";
+      let currentMap = "training";
+      let gameLoopId = null;
 
       const MAX_LIVES = 3;
+      const SPAWN_POINTS = [
+        { x: 100, y: 100 },
+        { x: canvas.width - 100, y: 100 },
+        { x: 100, y: canvas.height - 100 },
+        { x: canvas.width - 100, y: canvas.height - 100 }
+      ];
 
       const CHARACTERS = {
         TANK: {
           name: "Tank",
           color: "#4CAF50",
           stats: { speed: 2, health: 150, damage: 35, fireRate: 1.5, bulletSpeed: 8 },
-          ability: {
-            name: "Shield",
-            icon: "🛡️",
-            cooldown: 12000,
-            duration: 3000,
-            effect: "shield"
-          }
+          ability: { name: "Shield", icon: "🛡️", cooldown: 12000, duration: 3000, effect: "shield" }
         },
         SNIPER: {
           name: "Sniper",
           color: "#2196F3",
           stats: { speed: 4, health: 80, damage: 60, fireRate: 2.5, bulletSpeed: 15 },
-          ability: {
-            name: "Piercing Shot",
-            icon: "🎯",
-            cooldown: 10000,
-            duration: 0,
-            effect: "pierce"
-          }
+          ability: { name: "Piercing Shot", icon: "🎯", cooldown: 10000, duration: 0, effect: "pierce" }
         },
         RUNNER: {
           name: "Runner",
           color: "#FFC107",
           stats: { speed: 7, health: 70, damage: 15, fireRate: 0.3, bulletSpeed: 10 },
-          ability: {
-            name: "Dash",
-            icon: "💨",
-            cooldown: 6000,
-            duration: 300,
-            effect: "dash"
-          }
+          ability: { name: "Dash", icon: "💨", cooldown: 6000, duration: 300, effect: "dash" }
         },
         BALANCED: {
           name: "Balanced",
           color: "#9C27B0",
           stats: { speed: 4.5, health: 100, damage: 25, fireRate: 0.8, bulletSpeed: 10 },
-          ability: {
-            name: "Heal Burst",
-            icon: "💚",
-            cooldown: 15000,
-            duration: 0,
-            effect: "heal"
-          }
+          ability: { name: "Heal Burst", icon: "💚", cooldown: 15000, duration: 0, effect: "heal" }
         },
         ASSAULT: {
           name: "Assault",
           color: "#FF5722",
           stats: { speed: 5, health: 90, damage: 30, fireRate: 0.5, bulletSpeed: 12 },
-          ability: {
-            name: "Triple Shot",
-            icon: "🔥",
-            cooldown: 8000,
-            duration: 0,
-            effect: "triple"
-          }
+          ability: { name: "Triple Shot", icon: "🔥", cooldown: 8000, duration: 0, effect: "triple" }
         }
       };
 
+      // ============ IMPROVED MAPS ============
       const MAPS = {
+        // Level 1: Simple open arena - great for beginners
+        training: {
+          name: "Training Ground",
+          icon: "🎯",
+          difficulty: 1,
+          description: "Open arena perfect for learning",
+          background: "#0a0e1a",
+          gridColor: "rgba(100, 255, 100, 0.05)",
+          hasMovingWalls: false,
+          generateObstacles: () => {
+            return [
+              // Just 4 small cover spots
+              { x: 250, y: 280, w: 80, h: 80, color: "#2d5a27" },
+              { x: 770, y: 280, w: 80, h: 80, color: "#2d5a27" },
+              { x: 510, y: 150, w: 80, h: 60, color: "#2d5a27" },
+              { x: 510, y: 440, w: 80, h: 60, color: "#2d5a27" }
+            ];
+          },
+          generateZones: () => []
+        },
+
+        // Level 2: Classic arena with more cover
         arena: {
-          name: "Arena",
+          name: "Classic Arena",
+          icon: "🏟️",
+          difficulty: 2,
+          description: "Balanced combat with cover",
           background: "#0a0e1a",
           gridColor: "rgba(255, 255, 255, 0.05)",
+          hasMovingWalls: false,
           generateObstacles: () => {
-            const obs = [];
-            obs.push({ x: canvas.width/2 - 75, y: canvas.height/2 - 75, w: 150, h: 150, color: "#37474F" });
-            obs.push({ x: 200, y: 150, w: 100, h: 20, color: "#37474F" });
-            obs.push({ x: 900, y: 150, w: 100, h: 20, color: "#37474F" });
-            obs.push({ x: 200, y: 530, w: 100, h: 20, color: "#37474F" });
-            obs.push({ x: 900, y: 530, w: 100, h: 20, color: "#37474F" });
-            obs.push({ x: 400, y: 250, w: 20, h: 100, color: "#37474F" });
-            obs.push({ x: 780, y: 350, w: 20, h: 100, color: "#37474F" });
-            return obs;
+            return [
+              // Center structure
+              { x: canvas.width/2 - 60, y: canvas.height/2 - 60, w: 120, h: 120, color: "#37474F" },
+              // Corner covers
+              { x: 150, y: 120, w: 100, h: 25, color: "#37474F" },
+              { x: 850, y: 120, w: 100, h: 25, color: "#37474F" },
+              { x: 150, y: 505, w: 100, h: 25, color: "#37474F" },
+              { x: 850, y: 505, w: 100, h: 25, color: "#37474F" },
+              // Side pillars
+              { x: 350, y: 200, w: 25, h: 100, color: "#455A64" },
+              { x: 725, y: 350, w: 25, h: 100, color: "#455A64" },
+              { x: 350, y: 350, w: 25, h: 100, color: "#455A64" },
+              { x: 725, y: 200, w: 25, h: 100, color: "#455A64" }
+            ];
           },
           generateZones: () => []
         },
-        maze: {
-          name: "Maze",
-          background: "#0d1117",
-          gridColor: "rgba(100, 255, 100, 0.03)",
+
+        // Level 3: Urban Warfare - Collapsing buildings and danger zones
+        urban: {
+          name: "Urban Warfare",
+          icon: "🏙️",
+          difficulty: 3,
+          description: "Collapsing buildings and toxic zones",
+          background: "#0f0f15",
+          gridColor: "rgba(200, 200, 100, 0.04)",
+          hasMovingWalls: false,
           generateObstacles: () => {
-            const obs = [];
-            for (let i = 0; i < 4; i++) {
-              obs.push({ x: 150 + i * 250, y: 180, w: 150, h: 20, color: "#2d5a27" });
-              obs.push({ x: 100 + i * 250, y: 500, w: 150, h: 20, color: "#2d5a27" });
-            }
-            for (let i = 0; i < 3; i++) {
-              obs.push({ x: 300 + i * 300, y: 250, w: 20, h: 200, color: "#2d5a27" });
-            }
-            return obs;
+            return [
+              // Building ruins - top left (far from spawn)
+              { x: 200, y: 180, w: 120, h: 80, color: "#3a3a2a" },
+              { x: 230, y: 260, w: 60, h: 60, color: "#4a4a3a" },
+              // Building ruins - top right (far from spawn)
+              { x: 780, y: 180, w: 120, h: 80, color: "#3a3a2a" },
+              { x: 810, y: 260, w: 60, h: 60, color: "#4a4a3a" },
+              // Central rubble
+              { x: 480, y: 250, w: 140, h: 40, color: "#5a5a4a" },
+              { x: 500, y: 290, w: 40, h: 80, color: "#6a6a5a" },
+              { x: 560, y: 290, w: 40, h: 80, color: "#6a6a5a" },
+              // Building ruins - bottom left (far from spawn)
+              { x: 200, y: 410, w: 120, h: 80, color: "#3a3a2a" },
+              { x: 230, y: 330, w: 60, h: 60, color: "#4a4a3a" },
+              // Building ruins - bottom right (far from spawn)
+              { x: 780, y: 410, w: 120, h: 80, color: "#3a3a2a" },
+              { x: 810, y: 330, w: 60, h: 60, color: "#4a4a3a" }
+            ];
           },
-          generateZones: () => []
-        },
-        fortress: {
-          name: "Fortress",
-          background: "#1a1510",
-          gridColor: "rgba(255, 200, 100, 0.03)",
-          generateObstacles: () => {
-            const obs = [];
-            obs.push({ x: 100, y: 100, w: 300, h: 30, color: "#5d4e37" });
-            obs.push({ x: canvas.width - 400, y: 100, w: 300, h: 30, color: "#5d4e37" });
-            obs.push({ x: 100, y: canvas.height - 130, w: 300, h: 30, color: "#5d4e37" });
-            obs.push({ x: canvas.width - 400, y: canvas.height - 130, w: 300, h: 30, color: "#5d4e37" });
-            obs.push({ x: canvas.width/2 - 100, y: canvas.height/2 - 100, w: 200, h: 30, color: "#8b7355" });
-            obs.push({ x: canvas.width/2 - 100, y: canvas.height/2 + 70, w: 200, h: 30, color: "#8b7355" });
-            obs.push({ x: canvas.width/2 - 100, y: canvas.height/2 - 70, w: 30, h: 140, color: "#8b7355" });
-            obs.push({ x: canvas.width/2 + 70, y: canvas.height/2 - 70, w: 30, h: 140, color: "#8b7355" });
-            return obs;
-          },
-          generateZones: () => []
-        },
-        chaos: {
-          name: "Chaos",
-          background: "#1a0a0a",
-          gridColor: "rgba(255, 50, 50, 0.03)",
-          generateObstacles: () => {
-            const obs = [];
-            const seed = Date.now();
-            const random = (i) => ((seed * (i + 1) * 9301 + 49297) % 233280) / 233280;
-            
-            for (let i = 0; i < 12; i++) {
-              const x = 100 + random(i) * (canvas.width - 250);
-              const y = 100 + random(i + 100) * (canvas.height - 250);
-              const w = 40 + random(i + 200) * 80;
-              const h = 20 + random(i + 300) * 60;
-              
-              if ((x < 200 && y < 200) || (x > canvas.width - 250 && y < 200) ||
-                  (x < 200 && y > canvas.height - 250) || (x > canvas.width - 250 && y > canvas.height - 250)) {
-                continue;
+          generateMovingObstacles: () => {
+            return [
+              // Falling debris (vertical movement)
+              {
+                x: 350, y: 150, w: 80, h: 25,
+                color: "#6a5a4a",
+                glowColor: "#aa8a6a",
+                damageOnTouch: 20,
+                vx: 0, vy: 1.5,
+                minX: 350, maxX: 350,
+                minY: 150, maxY: 400,
+                isDangerous: true
+              },
+              {
+                x: 670, y: 400, w: 80, h: 25,
+                color: "#6a5a4a",
+                glowColor: "#aa8a6a",
+                damageOnTouch: 20,
+                vx: 0, vy: -1.5,
+                minX: 670, maxX: 670,
+                minY: 200, maxY: 400,
+                isDangerous: true
               }
-              
-              obs.push({ x, y, w, h, color: "#4a1a1a" });
-            }
-            return obs;
+            ];
           },
-          generateZones: () => []
+          generateZones: () => [
+            // Toxic waste zones (damage over time)
+            { x: 150, y: 300, w: 100, h: 100, type: "damage", color: "#88ff00", intensity: 0.15 },
+            { x: 850, y: 300, w: 100, h: 100, type: "damage", color: "#88ff00", intensity: 0.15 }
+          ],
+          allowHealingPads: false
+        },
+
+        // Level 4: Crossfire - All walls appear and disappear randomly
+        crossfire: {
+          name: "Crossfire",
+          icon: "⚔️",
+          difficulty: 4,
+          description: "Walls materialize and dematerialize",
+          background: "#120a1a",
+          gridColor: "rgba(200, 100, 255, 0.05)",
+          hasMovingWalls: false,
+          hasDisappearingWalls: true,
+          generateObstacles: () => [],
+          generateMovingObstacles: () => createCrossfireWalls(),
+          generateZones: () => [],
+          allowHealingPads: false
+        },
+
+        // Level 5: The Pit - Rotating barriers and gravity anomalies
+        thepit: {
+          name: "The Pit",
+          icon: "⭕",
+          difficulty: 5,
+          description: "Rotating barriers and gravity zones",
+          background: "#1a1010",
+          gridColor: "rgba(255, 150, 150, 0.06)",
+          hasMovingWalls: false,
+          hasRotatingWalls: true, // Special flag for rotating obstacles
+          generateObstacles: () => {
+            const obstacles = [];
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+
+            // Outer ring walls (far from spawns at 100,100 etc)
+            const numSegments = 8;
+            const outerRadius = 280;
+
+            for (let i = 0; i < numSegments; i++) {
+              const angle = (i / numSegments) * Math.PI * 2;
+              const x = centerX + Math.cos(angle) * outerRadius - 30;
+              const y = centerY + Math.sin(angle) * outerRadius - 30;
+              obstacles.push({ x, y, w: 60, h: 60, color: "#5a3a3a" });
+            }
+
+            // Center elevated platform
+            obstacles.push({ x: centerX - 70, y: centerY - 70, w: 140, h: 140, color: "#8a5a5a" });
+
+            return obstacles;
+          },
+          generateMovingObstacles: () => {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const obstacles = [];
+
+            // Rotating barriers around center (4 arms)
+            for (let i = 0; i < 4; i++) {
+              const angle = (i / 4) * Math.PI * 2;
+              const radius = 150;
+              obstacles.push({
+                x: centerX + Math.cos(angle) * radius - 80,
+                y: centerY + Math.sin(angle) * radius - 15,
+                w: 160,
+                h: 30,
+                color: "#cc4444",
+                glowColor: "#ff6666",
+                damageOnTouch: 15,
+                vx: 0, vy: 0,
+                minX: 0, maxX: canvas.width,
+                minY: 0, maxY: canvas.height,
+                isDangerous: true,
+                isRotating: true,
+                rotationSpeed: 0.015, // radians per frame
+                rotationAngle: angle,
+                rotationRadius: radius,
+                rotationCenter: { x: centerX, y: centerY }
+              });
+            }
+
+            return obstacles;
+          },
+          generateZones: () => [
+            // Central gravity well (pulls players in slowly)
+            { x: canvas.width/2 - 90, y: canvas.height/2 - 90, w: 180, h: 180, type: "gravity", color: "#ff4444", pull: 0.05 }
+          ],
+          allowHealingPads: false
+        },
+
+        // Level 6: DEATH ZONE - Moving walls that damage players!
+        deathzone: {
+          name: "Death Zone",
+          icon: "💀",
+          difficulty: 6,
+          description: "Beware of moving deadly walls!",
+          background: "#1a0505",
+          gridColor: "rgba(255, 0, 0, 0.08)",
+          hasMovingWalls: true,
+          generateObstacles: () => {
+            // Static obstacles - moved away from spawn corners (spawns at 100,100 etc)
+            return [
+              { x: 200, y: 180, w: 60, h: 60, color: "#4a1a1a" },
+              { x: canvas.width - 260, y: 180, w: 60, h: 60, color: "#4a1a1a" },
+              { x: 200, y: canvas.height - 240, w: 60, h: 60, color: "#4a1a1a" },
+              { x: canvas.width - 260, y: canvas.height - 240, w: 60, h: 60, color: "#4a1a1a" },
+              // Center safe zone marker
+              { x: canvas.width/2 - 40, y: canvas.height/2 - 40, w: 80, h: 80, color: "#2a2a2a" }
+            ];
+          },
+          generateMovingObstacles: () => {
+            return [
+              // Horizontal movers
+              {
+                x: 200, y: 180, w: 150, h: 25,
+                color: "#8B0000",
+                glowColor: "#FF4500",
+                damageOnTouch: 15,
+                vx: 2, vy: 0,
+                minX: 150, maxX: 800,
+                minY: 180, maxY: 180,
+                isDangerous: true
+              },
+              {
+                x: 750, y: 445, w: 150, h: 25,
+                color: "#8B0000",
+                glowColor: "#FF4500",
+                damageOnTouch: 15,
+                vx: -2, vy: 0,
+                minX: 150, maxX: 800,
+                minY: 445, maxY: 445,
+                isDangerous: true
+              },
+              // Vertical movers
+              {
+                x: 280, y: 250, w: 25, h: 120,
+                color: "#8B0000",
+                glowColor: "#FF4500",
+                damageOnTouch: 15,
+                vx: 0, vy: 1.5,
+                minX: 280, maxX: 280,
+                minY: 200, maxY: 400,
+                isDangerous: true
+              },
+              {
+                x: 795, y: 200, w: 25, h: 120,
+                color: "#8B0000",
+                glowColor: "#FF4500",
+                damageOnTouch: 15,
+                vx: 0, vy: -1.5,
+                minX: 795, maxX: 795,
+                minY: 200, maxY: 400,
+                isDangerous: true
+              },
+              // Diagonal crusher
+              {
+                x: 500, y: 100, w: 100, h: 30,
+                color: "#660000",
+                glowColor: "#FF0000",
+                damageOnTouch: 25,
+                vx: 1, vy: 1,
+                minX: 400, maxX: 600,
+                minY: 100, maxY: 250,
+                isDangerous: true
+              },
+              {
+                x: 500, y: 500, w: 100, h: 30,
+                color: "#660000",
+                glowColor: "#FF0000",
+                damageOnTouch: 25,
+                vx: -1, vy: -1,
+                minX: 400, maxX: 600,
+                minY: 370, maxY: 520,
+                isDangerous: true
+              }
+            ];
+          },
+          generateZones: () => [],
+          allowHealingPads: false
         }
       };
 
-      const DROP_TYPES = {
-        ABILITY: {
-          icon: "⚡",
-          color: "#FFD700",
-          effect: "recharge_ability",
-          duration: 12000,
-          radius: 20
-        },
-        SPEED: {
-          icon: "💨",
-          color: "#00BCD4", 
-          effect: "speed_boost",
-          duration: 10000,
-          radius: 20,
-          boostDuration: 5000
-        },
-        HEALTH: {
-          icon: "❤️",
-          color: "#4CAF50",
-          effect: "heal",
-          duration: 8000,
-          radius: 20,
-          healAmount: 30
+      const CROSS_FIRE_WALL_COUNT = 12;
+      const CROSS_FIRE_PHASE_BASE = 2600;
+      const SPAWN_SAFE_RADIUS = 80;
+
+      function rectsOverlap(a, b) {
+        return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+      }
+
+      function rectCircleOverlap(rect, circle) {
+        const closestX = Math.max(rect.x, Math.min(circle.x, rect.x + rect.w));
+        const closestY = Math.max(rect.y, Math.min(circle.y, rect.y + rect.h));
+        const dx = circle.x - closestX;
+        const dy = circle.y - closestY;
+        return dx * dx + dy * dy < circle.r * circle.r;
+      }
+
+      function isWallPlacementSafe(x, y, w, h, skipObs = null, extraWalls = null, includeMoving = true) {
+        const rect = { x, y, w, h };
+
+        for (const spawn of SPAWN_POINTS) {
+          if (rectCircleOverlap(rect, { x: spawn.x, y: spawn.y, r: SPAWN_SAFE_RADIUS })) return false;
         }
+
+        for (const player of Object.values(players)) {
+          if (!player || player.isRespawning || player.health <= 0) continue;
+          if (rectCircleOverlap(rect, { x: player.x, y: player.y, r: player.r + 15 })) return false;
+        }
+
+        for (const obs of obstacles) {
+          if (rectsOverlap(rect, obs)) return false;
+        }
+
+        if (extraWalls) {
+          for (const obs of extraWalls) {
+            if (rectsOverlap(rect, obs)) return false;
+          }
+        }
+
+        if (includeMoving) {
+          for (const obs of movingObstacles) {
+            if (obs === skipObs) continue;
+            if (rectsOverlap(rect, obs)) return false;
+          }
+        }
+
+        return true;
+      }
+
+      function findSafeWallPlacement(w, h, skipObs = null, extraWalls = null, includeMoving = true) {
+        const margin = 70;
+        for (let attempts = 0; attempts < 80; attempts++) {
+          const x = margin + Math.random() * (canvas.width - w - margin * 2);
+          const y = margin + Math.random() * (canvas.height - h - margin * 2);
+          if (isWallPlacementSafe(x, y, w, h, skipObs, extraWalls, includeMoving)) {
+            return { x, y };
+          }
+        }
+        return null;
+      }
+
+      function createCrossfireWalls() {
+        const walls = [];
+        for (let i = 0; i < CROSS_FIRE_WALL_COUNT; i++) {
+          const isVertical = Math.random() > 0.5;
+          const w = isVertical ? 26 + Math.random() * 16 : 120 + Math.random() * 140;
+          const h = isVertical ? 120 + Math.random() * 160 : 26 + Math.random() * 16;
+          const pos = findSafeWallPlacement(w, h, null, walls, false);
+          if (!pos) continue;
+
+          walls.push({
+            x: pos.x,
+            y: pos.y,
+            w,
+            h,
+            color: "#aa44cc",
+            glowColor: "#ff66ff",
+            damageOnTouch: 0,
+            vx: 0, vy: 0,
+            minX: pos.x, maxX: pos.x,
+            minY: pos.y, maxY: pos.y,
+            isDangerous: false,
+            isPhasing: true,
+            isCrossfireWall: true,
+            phaseInterval: CROSS_FIRE_PHASE_BASE + Math.random() * 2200,
+            phaseOffset: i * 350
+          });
+        }
+
+        return walls;
+      }
+
+      function repositionCrossfireWall(obs) {
+        const pos = findSafeWallPlacement(obs.w, obs.h, obs, null, true);
+        if (!pos) {
+          obs.visible = false;
+          return;
+        }
+        obs.x = pos.x;
+        obs.y = pos.y;
+        obs.minX = pos.x;
+        obs.maxX = pos.x;
+        obs.minY = pos.y;
+        obs.maxY = pos.y;
+      }
+
+      const DROP_TYPES = {
+        ABILITY: { icon: "⚡", color: "#FFD700", effect: "recharge_ability", duration: 12000, radius: 20 },
+        SPEED: { icon: "💨", color: "#00BCD4", effect: "speed_boost", duration: 10000, radius: 20, boostDuration: 5000 },
+        HEALTH: { icon: "❤️", color: "#4CAF50", effect: "heal", duration: 8000, radius: 20, healAmount: 30 }
       };
 
       const ARENA_EVENTS = {
         INFERNO: {
-          name: "Fire Tempest",
-          icon: "🔥",
-          duration: 15000,
-          backgroundTint: 'rgba(255, 69, 0, 0.25)',
-          wallColor: '#8B0000',
-          gridColor: 'rgba(255, 100, 0, 0.15)'
+          name: "Fire Tempest", icon: "🔥", duration: 15000,
+          backgroundTint: 'rgba(255, 69, 0, 0.25)', wallColor: '#8B0000', gridColor: 'rgba(255, 100, 0, 0.15)'
         },
         BLIZZARD: {
-          name: "Ice Blizzard", 
-          icon: "❄️",
-          duration: 18000,
-          backgroundTint: 'rgba(0, 191, 255, 0.2)',
-          wallColor: '#4682B4',
-          gridColor: 'rgba(200, 230, 255, 0.1)',
-          particleColor: '#E0F7FF'
+          name: "Ice Blizzard", icon: "❄️", duration: 18000,
+          backgroundTint: 'rgba(0, 191, 255, 0.2)', wallColor: '#4682B4', gridColor: 'rgba(200, 230, 255, 0.1)', particleColor: '#E0F7FF'
         },
         GRAVITY_CHAOS: {
-          name: "Gravity Chaos",
-          icon: "🌀",
-          duration: 8000,
-          backgroundTint: 'rgba(156, 39, 176, 0.2)',
-          wallColor: '#7B1FA2',
-          gridColor: 'rgba(200, 100, 255, 0.1)'
+          name: "Gravity Chaos", icon: "🌀", duration: 8000,
+          backgroundTint: 'rgba(156, 39, 176, 0.2)', wallColor: '#7B1FA2', gridColor: 'rgba(200, 100, 255, 0.1)'
         }
       };
 
       let currentEvent = null;
       let eventStartTime = 0;
       let activeDrops = [];
-      let dropInterval = null;
-      let healingPadInterval = null;
 
-      function initEnvironment(mapKey = "arena") {
+      function mapAllowsDrops() {
+        const map = MAPS[currentMap];
+        return !map || map.allowDrops !== false;
+      }
+
+      function mapAllowsHealingPads() {
+        const map = MAPS[currentMap];
+        return !map || map.allowHealingPads !== false;
+      }
+
+      function initEnvironment(mapKey = "training") {
         currentMap = mapKey;
         const map = MAPS[mapKey];
-        
+
         obstacles = map.generateObstacles();
+        movingObstacles = map.generateMovingObstacles ? map.generateMovingObstacles() : [];
+
+        // Initialize special wall mechanics
+        movingObstacles.forEach((obs, i) => {
+          if (obs.isPhasing) {
+            obs.visible = true;
+            obs.lastPhaseTime = Date.now() + (obs.phaseOffset || 0);
+          }
+          if (obs.isRotating) {
+            obs.currentAngle = obs.rotationAngle;
+          }
+        });
+
         specialZones = map.generateZones();
         camps = [];
         activeDrops = [];
-        
+
         mapInfoEl.textContent = `Map: ${map.name}`;
+        scoreboardMapName.textContent = `Map: ${map.name} (Difficulty: ${'⭐'.repeat(map.difficulty)})`;
+      }
+
+      function updateScoreboard() {
+        const sortedPlayers = Object.values(players)
+          .sort((a, b) => b.kills - a.kills || a.deaths - b.deaths);
+        
+        scoreListEl.innerHTML = '';
+        
+        sortedPlayers.forEach((player, i) => {
+          const char = CHARACTERS[player.character];
+          const li = document.createElement('li');
+          li.className = player.lives <= 0 ? 'eliminated' : '';
+          li.style.borderLeft = `4px solid ${char.color}`;
+          
+          let hearts = '';
+          for (let h = 0; h < player.lives; h++) hearts += '❤️';
+          
+          li.innerHTML = `
+            <span class="player-name" style="color: ${char.color}">${i + 1}. ${char.name}</span>
+            <span class="player-stats">${player.kills}K / ${player.deaths}D</span>
+            <span class="player-lives">${hearts || '☠️'}</span>
+          `;
+          
+          scoreListEl.appendChild(li);
+        });
       }
 
       function spawnDrop() {
         if (gameState !== "playing") return;
+        if (!mapAllowsDrops()) return;
         if (activeDrops.length >= 2) return;
         
         const dropKeys = Object.keys(DROP_TYPES);
@@ -536,20 +1160,19 @@
         } while (attempts < 50 && isColliding(x, y, dropType.radius));
         
         activeDrops.push({
-          type: randomKey,
-          x, y,
+          type: randomKey, x, y,
           spawnTime: Date.now(),
           ...dropType
         });
         
-        // 🔊 SOUND: Powerup spawned
         audioManager.play('powerup', { volume: 0.4 });
       }
 
       function startDropSpawning() {
-        if (dropInterval) clearInterval(dropInterval);
-        
+        if (!mapAllowsDrops()) return;
         const scheduleNextDrop = () => {
+          if (gameState !== "playing") return;
+          if (!mapAllowsDrops()) return;
           const delay = 8000 + Math.random() * 4000;
           setTimeout(() => {
             spawnDrop();
@@ -565,6 +1188,7 @@
 
       function spawnHealingPad() {
         if (gameState !== "playing") return;
+        if (!mapAllowsHealingPads()) return;
         if (camps.length > 0) return;
         
         const colors = ["#1565C0", "#C62828", "#2E7D32", "#F57C00"];
@@ -578,23 +1202,20 @@
         } while (attempts < 50 && isColliding(x + 40, y + 40, 40));
         
         camps.push({
-          x: x,
-          y: y,
-          w: 80,
-          h: 80,
+          x, y, w: 80, h: 80,
           color: randomColor,
           spawnTime: Date.now(),
           duration: 12000
         });
         
-        // 🔊 SOUND: Healing pad spawned
         audioManager.play('powerup', { volume: 0.3 });
       }
 
       function startHealingPadSpawning() {
-        if (healingPadInterval) clearInterval(healingPadInterval);
-        
+        if (!mapAllowsHealingPads()) return;
         const scheduleNextPad = () => {
+          if (gameState !== "playing") return;
+          if (!mapAllowsHealingPads()) return;
           const delay = 10000 + Math.random() * 5000;
           setTimeout(() => {
             spawnHealingPad();
@@ -610,6 +1231,7 @@
 
       function startArenaEvents() {
         const scheduleNextEvent = () => {
+          if (gameState !== "playing") return;
           const delay = 25000 + Math.random() * 15000;
           
           setTimeout(() => {
@@ -632,10 +1254,7 @@
         const randomKey = eventKeys[Math.floor(Math.random() * eventKeys.length)];
         const eventData = ARENA_EVENTS[randomKey];
         
-        currentEvent = {
-          type: randomKey,
-          ...eventData
-        };
+        currentEvent = { type: randomKey, ...eventData };
         eventStartTime = Date.now();
         
         ws.send(JSON.stringify({
@@ -648,9 +1267,9 @@
         
         setTimeout(() => {
           currentEvent = null;
-          ws.send(JSON.stringify({
-            type: 'arena_event_end'
-          }));
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'arena_event_end' }));
+          }
         }, eventData.duration);
       }
 
@@ -658,19 +1277,54 @@
         for (const obs of obstacles) {
           if (checkCollision({ x, y, r }, obs)) return true;
         }
+        for (const obs of movingObstacles) {
+          // Skip invisible phasing walls
+          if (obs.isPhasing && !obs.visible) continue;
+          if (checkCollision({ x, y, r }, obs)) return true;
+        }
         return false;
       }
 
       initEnvironment();
 
+      // Update map info display
+      function updateMapInfo() {
+        const map = MAPS[currentMap];
+        const mapInfoEl = document.getElementById('mapInfo');
+        if (map) {
+          mapInfoEl.textContent = `${map.icon} ${map.name} - ${'⭐'.repeat(map.difficulty)}`;
+        }
+      }
+
+      // Map selector change handler
       document.getElementById("mapSelect").onchange = (e) => {
-        initEnvironment(e.target.value);
+        currentMap = e.target.value;
+        initEnvironment(currentMap);
+        updateMapInfo();
+
+        // Update waiting screen map info
+        const map = MAPS[currentMap];
+        const waitingMapInfo = document.querySelector('#waitingScreen p#mapInfo');
+        if (waitingMapInfo) {
+          waitingMapInfo.textContent = `${map.icon} ${map.name}`;
+        }
+
+        // Update scoreboard map info
+        scoreboardMapName.textContent = `Map: ${map.name} (Difficulty: ${'⭐'.repeat(map.difficulty)})`;
       };
+
+      // Initialize map info on load
+      updateMapInfo();
 
       document.getElementById("connectBtn").onclick = () => {
         roomId = document.getElementById("room").value.trim() || "war123";
         currentMap = document.getElementById("mapSelect").value;
-        
+
+        // Disable map selector once connected
+        document.getElementById("mapSelect").disabled = true;
+        document.getElementById("room").disabled = true;
+        document.getElementById("connectBtn").disabled = true;
+
         const serverUrl =
           (window.location.protocol === "https:" ? "wss://" : "ws://") +
           window.location.host;
@@ -682,6 +1336,13 @@
           const status = document.getElementById("status");
           status.textContent = "Connected ✅";
           status.style.color = "#00ff88";
+
+          // Update waiting screen with selected map
+          const map = MAPS[currentMap];
+          const waitingMapInfo = document.querySelector('#waitingScreen p#mapInfo');
+          if (waitingMapInfo) {
+            waitingMapInfo.textContent = `${map.icon} ${map.name}`;
+          }
         };
 
         ws.onmessage = (e) => {
@@ -698,17 +1359,104 @@
           document.getElementById("status").style.color = "#ff4444";
           gameState = "waiting";
           waitingScreen.style.display = "block";
-          
-          // 🔊 SOUND: Stop music on disconnect
           audioManager.stopBgMusic();
         };
       };
+
+      // Restart button handler
+      document.getElementById("restartBtn").onclick = () => {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: "restart_game", room: roomId }));
+        }
+        restartGame();
+      };
+
+      function restartGame() {
+        // Reset game state
+        gameState = "waiting";
+        players = {};
+        bullets = [];
+        movingObstacles = [];
+        camps = [];
+        activeDrops = [];
+        currentEvent = null;
+
+        // Reset UI
+        gameEndScreen.classList.remove('visible');
+        waitingScreen.style.display = "block";
+        scoreListEl.innerHTML = '';
+
+        // Exit fullscreen mode
+        document.getElementById('mainContainer').classList.remove('fullscreen-mode');
+        document.getElementById('mainTitle').classList.remove('hidden');
+        document.getElementById('controls').style.display = 'flex';
+
+        // Re-enable controls
+        document.getElementById("mapSelect").disabled = false;
+        document.getElementById("room").disabled = false;
+        document.getElementById("connectBtn").disabled = false;
+
+        // Reset status
+        const status = document.getElementById("status");
+        status.textContent = "Not connected";
+        status.style.color = "#fff";
+
+        // Reinitialize environment with current map
+        currentMap = document.getElementById("mapSelect").value;
+        initEnvironment(currentMap);
+
+        audioManager.stopBgMusic();
+      }
+
+      function showGameEndScreen(winner, allPlayers) {
+        gameEndScreen.classList.add('visible');
+        
+        const trophyIcon = document.getElementById('trophyIcon');
+        const endTitle = document.getElementById('endTitle');
+        const winnerName = document.getElementById('winnerName');
+        const winnerStats = document.getElementById('winnerStats');
+        const finalScoreList = document.getElementById('finalScoreList');
+        
+        if (winner) {
+          const char = CHARACTERS[winner.character];
+          trophyIcon.textContent = '🏆';
+          endTitle.textContent = 'WINNER!';
+          endTitle.style.color = char.color;
+          winnerName.textContent = char.name;
+          winnerName.style.color = char.color;
+          winnerStats.textContent = `${winner.kills} Kills | ${winner.deaths} Deaths`;
+        } else {
+          trophyIcon.textContent = '💀';
+          endTitle.textContent = 'DRAW!';
+          endTitle.style.color = '#ff6666';
+          winnerName.textContent = 'All players eliminated';
+          winnerName.style.color = '#aaa';
+          winnerStats.textContent = '';
+        }
+        
+        // Final scores
+        finalScoreList.innerHTML = '';
+        const sortedPlayers = Object.values(allPlayers)
+          .sort((a, b) => b.kills - a.kills || a.deaths - b.deaths);
+        
+        sortedPlayers.forEach((p, i) => {
+          const char = CHARACTERS[p.character];
+          const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
+          const row = document.createElement('div');
+          row.className = 'score-row';
+          row.style.color = p.lives > 0 ? char.color : '#888';
+          row.innerHTML = `
+            <span>${medal} ${char.name}</span>
+            <span>${p.kills} Kills / ${p.deaths} Deaths</span>
+          `;
+          finalScoreList.appendChild(row);
+        });
+      }
 
       function handleServerMessage(data) {
         switch (data.type) {
           case "player_joined":
             playerCountEl.textContent = `${data.totalPlayers} player${data.totalPlayers > 1 ? 's' : ''} connected`;
-            // 🔊 SOUND: Player joined
             audioManager.play('playerJoined', { volume: 0.5 });
             break;
 
@@ -719,36 +1467,41 @@
           case "game_start":
             gameState = "playing";
             waitingScreen.style.display = "none";
-            initEnvironment(currentMap);
-            startDropSpawning();
-            startArenaEvents();
-            startHealingPadSpawning();
+            gameEndScreen.classList.remove('visible');
 
-            // 🔊 SOUND: Start background music
+            // Use the map from server if provided, otherwise use current selected map
+            const mapToUse = data.map || currentMap;
+            currentMap = mapToUse;
+            initEnvironment(mapToUse);
+
+            // Activate fullscreen mode automatically
+            document.getElementById('mainContainer').classList.add('fullscreen-mode');
+            document.getElementById('mainTitle').classList.add('hidden');
+            document.getElementById('controls').style.display = 'none';
+
+            if (mapAllowsDrops()) {
+              startDropSpawning();
+            }
+            startArenaEvents();
+            if (mapAllowsHealingPads()) {
+              startHealingPadSpawning();
+            }
+
             audioManager.playBgMusic();
 
             data.players.forEach((p, i) => {
-              const spawnPoints = [
-                { x: 100, y: 100 },
-                { x: canvas.width - 100, y: 100 },
-                { x: 100, y: canvas.height - 100 },
-                { x: canvas.width - 100, y: canvas.height - 100 }
-              ];
-              const spawn = spawnPoints[i % 4];
+              const spawn = SPAWN_POINTS[i % SPAWN_POINTS.length];
               const char = CHARACTERS[p.character];
 
               players[p.id] = {
                 id: p.id,
-                x: spawn.x,
-                y: spawn.y,
-                vx: 0,
-                vy: 0,
+                x: spawn.x, y: spawn.y,
+                vx: 0, vy: 0,
                 r: 20,
                 character: p.character,
                 health: char.stats.health,
                 maxHealth: char.stats.health,
-                kills: 0,
-                deaths: 0,
+                kills: 0, deaths: 0,
                 lives: MAX_LIVES,
                 lastShot: 0,
                 lastHitBy: null,
@@ -757,19 +1510,17 @@
                 abilityActive: false,
                 abilityEndTime: 0,
                 pierceNextShot: false,
-                dashDirection: { x: 0, y: 0 }
+                dashDirection: { x: 0, y: 0 },
+                lastDamageWall: 0
               };
             });
+
+            updateScoreboard();
 
             ws.send(JSON.stringify({
               type: "game_update",
               players: Object.values(players).map(p => ({
-                id: p.id,
-                lives: p.lives,
-                health: p.health,
-                maxHealth: p.maxHealth,
-                abilityCooldown: p.abilityCooldown,
-                abilityActive: p.abilityActive
+                id: p.id, lives: p.lives, health: p.health, maxHealth: p.maxHealth, abilityCooldown: p.abilityCooldown, abilityActive: p.abilityActive
               }))
             }));
             break;
@@ -780,17 +1531,9 @@
               const player = players[data.playerId];
               let speedMod = 1;
               
-              if (player.speedBoostEnd && Date.now() < player.speedBoostEnd) {
-                speedMod = 2;
-              }
-              
-              if (player.frozen && player.frozen.canMove === false) {
-                speedMod = 0;
-              }
-              
-              if (player.abilityActive && CHARACTERS[player.character].ability.effect === "dash") {
-                speedMod = 4;
-              }
+              if (player.speedBoostEnd && Date.now() < player.speedBoostEnd) speedMod = 2;
+              if (player.frozen && player.frozen.canMove === false) speedMod = 0;
+              if (player.abilityActive && CHARACTERS[player.character].ability.effect === "dash") speedMod = 4;
               
               players[data.playerId].vx = -data.ax * char.stats.speed * 0.15 * speedMod;
               players[data.playerId].vy = data.ay * char.stats.speed * 0.15 * speedMod;
@@ -798,49 +1541,32 @@
             break;
 
           case "player_shoot":
-            if (players[data.playerId]) {
-              shoot(data.playerId);
-            }
+            if (players[data.playerId]) shoot(data.playerId);
             break;
 
           case "player_ability":
-            if (players[data.playerId]) {
-              activateAbility(data.playerId);
-            }
+            if (players[data.playerId]) activateAbility(data.playerId);
             break;
 
           case "player_action":
             const player = players[data.playerId];
             if (!player) break;
             
-            if (data.action === 'blow') {
-              if (player.onFire) {
-                delete player.onFire;
-                ws.send(JSON.stringify({
-                  type: 'player_status',
-                  playerId: player.id,
-                  status: 'clear',
-                  message: '✅ Fire extinguished!'
-                }));
-              }
+            if (data.action === 'blow' && player.onFire) {
+              delete player.onFire;
+              ws.send(JSON.stringify({ type: 'player_status', playerId: player.id, status: 'clear', message: '✅ Fire extinguished!' }));
             }
             
-            if (data.action === 'shake') {
-              if (player.frozen) {
-                delete player.frozen;
-                delete player.blizzardExposure;
-                ws.send(JSON.stringify({
-                  type: 'player_status',
-                  playerId: player.id,
-                  status: 'clear',
-                  message: '✅ Broke free from ice!'
-                }));
-              }
+            if (data.action === 'shake' && player.frozen) {
+              delete player.frozen;
+              delete player.blizzardExposure;
+              ws.send(JSON.stringify({ type: 'player_status', playerId: player.id, status: 'clear', message: '✅ Broke free from ice!' }));
             }
             break;
 
           case "player_left":
             delete players[data.playerId];
+            updateScoreboard();
             break;
         }
       }
@@ -877,7 +1603,6 @@
             
           case "heal":
             player.health = Math.min(player.maxHealth, player.health + player.maxHealth * 0.3);
-            // 🔊 SOUND: Heal ability
             audioManager.play('collectPowerup', { volume: 0.6 });
             break;
             
@@ -887,33 +1612,20 @@
             let tripleDist = Infinity;
             
             for (const enemy of Object.values(players)) {
-              if (enemy.id === playerId) continue;
-              if (enemy.health <= 0) continue;
-              if (enemy.lives <= 0) continue;
-              if (enemy.isRespawning) continue;
-              
+              if (enemy.id === playerId || enemy.health <= 0 || enemy.lives <= 0 || enemy.isRespawning) continue;
               const dx = enemy.x - player.x;
               const dy = enemy.y - player.y;
               const dist = Math.sqrt(dx * dx + dy * dy);
-              
-              if (dist < tripleDist) {
-                tripleDist = dist;
-                tripleTarget = enemy;
-              }
+              if (dist < tripleDist) { tripleDist = dist; tripleTarget = enemy; }
             }
             
             if (tripleTarget) {
               tripleAngle = Math.atan2(tripleTarget.y - player.y, tripleTarget.x - player.x);
-            } else {
-              if (Math.abs(player.vx) > 0.5 || Math.abs(player.vy) > 0.5) {
-                tripleAngle = Math.atan2(player.vy, player.vx);
-              } else {
-                tripleAngle = 0;
-              }
+            } else if (Math.abs(player.vx) > 0.5 || Math.abs(player.vy) > 0.5) {
+              tripleAngle = Math.atan2(player.vy, player.vx);
             }
             
             const spread = Math.PI / 8;
-            
             for (let i = -1; i <= 1; i++) {
               const bulletAngle = tripleAngle + (i * spread);
               bullets.push({
@@ -921,14 +1633,9 @@
                 y: player.y + Math.sin(bulletAngle) * 30,
                 vx: Math.cos(bulletAngle) * char.stats.bulletSpeed,
                 vy: Math.sin(bulletAngle) * char.stats.bulletSpeed,
-                owner: playerId,
-                damage: char.stats.damage,
-                color: char.color,
-                pierce: false
+                owner: playerId, damage: char.stats.damage, color: char.color, pierce: false
               });
             }
-            
-            // 🔊 SOUND: Triple shot
             audioManager.play('laserGunfire', { volume: 0.7 });
             break;
         }
@@ -953,19 +1660,11 @@
         let closestDist = Infinity;
         
         for (const enemy of Object.values(players)) {
-          if (enemy.id === playerId) continue;
-          if (enemy.health <= 0) continue;
-          if (enemy.lives <= 0) continue;
-          if (enemy.isRespawning) continue;
-          
+          if (enemy.id === playerId || enemy.health <= 0 || enemy.lives <= 0 || enemy.isRespawning) continue;
           const dx = enemy.x - player.x;
           const dy = enemy.y - player.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
-          
-          if (dist < closestDist) {
-            closestDist = dist;
-            closestEnemy = enemy;
-          }
+          if (dist < closestDist) { closestDist = dist; closestEnemy = enemy; }
         }
 
         let dirX, dirY;
@@ -974,37 +1673,23 @@
           const dx = closestEnemy.x - player.x;
           const dy = closestEnemy.y - player.y;
           const len = Math.sqrt(dx * dx + dy * dy);
-          dirX = dx / len;
-          dirY = dy / len;
+          dirX = dx / len; dirY = dy / len;
+        } else if (Math.abs(player.vx) > 0.5 || Math.abs(player.vy) > 0.5) {
+          const len = Math.sqrt(player.vx * player.vx + player.vy * player.vy);
+          dirX = player.vx / len; dirY = player.vy / len;
         } else {
-          if (Math.abs(player.vx) > 0.5 || Math.abs(player.vy) > 0.5) {
-            const len = Math.sqrt(player.vx * player.vx + player.vy * player.vy);
-            dirX = player.vx / len;
-            dirY = player.vy / len;
-          } else {
-            dirX = 1;
-            dirY = 0;
-          }
+          dirX = 1; dirY = 0;
         }
 
         const isPiercing = player.pierceNextShot;
-        if (isPiercing) {
-          player.pierceNextShot = false;
-          player.abilityActive = false;
-        }
+        if (isPiercing) { player.pierceNextShot = false; player.abilityActive = false; }
 
         bullets.push({
-          x: player.x + dirX * 30,
-          y: player.y + dirY * 30,
-          vx: dirX * char.stats.bulletSpeed,
-          vy: dirY * char.stats.bulletSpeed,
-          owner: playerId,
-          damage: char.stats.damage,
-          color: char.color,
-          pierce: isPiercing
+          x: player.x + dirX * 30, y: player.y + dirY * 30,
+          vx: dirX * char.stats.bulletSpeed, vy: dirY * char.stats.bulletSpeed,
+          owner: playerId, damage: char.stats.damage, color: char.color, pierce: isPiercing
         });
 
-        // 🔊 SOUND: Laser gunfire
         audioManager.play('laserGunfire', { volume: 0.4 });
       }
 
@@ -1018,6 +1703,43 @@
 
         const now = Date.now();
 
+        // Update moving obstacles
+        movingObstacles.forEach(obs => {
+          // Handle rotating obstacles
+          if (obs.isRotating) {
+            obs.currentAngle += obs.rotationSpeed;
+            const center = obs.rotationCenter;
+            obs.x = center.x + Math.cos(obs.currentAngle) * obs.rotationRadius - obs.w / 2;
+            obs.y = center.y + Math.sin(obs.currentAngle) * obs.rotationRadius - obs.h / 2;
+            return;
+          }
+
+          // Handle phasing obstacles (appear/disappear)
+          if (obs.isPhasing) {
+            const elapsed = now - obs.lastPhaseTime;
+            if (elapsed >= obs.phaseInterval) {
+              obs.visible = !obs.visible;
+              obs.lastPhaseTime = now;
+              if (obs.visible && obs.isCrossfireWall) {
+                repositionCrossfireWall(obs);
+              }
+            }
+            return;
+          }
+
+          // Normal moving obstacles
+          obs.x += obs.vx;
+          obs.y += obs.vy;
+
+          // Bounce off boundaries
+          if (obs.x <= obs.minX || obs.x >= obs.maxX) obs.vx *= -1;
+          if (obs.y <= obs.minY || obs.y >= obs.maxY) obs.vy *= -1;
+
+          // Keep in bounds
+          obs.x = Math.max(obs.minX, Math.min(obs.maxX, obs.x));
+          obs.y = Math.max(obs.minY, Math.min(obs.maxY, obs.y));
+        });
+
         Object.values(players).forEach(player => {
           if (player.health <= 0 && player.lives > 0 && !player.isRespawning) {
             player.isRespawning = true;
@@ -1028,15 +1750,12 @@
               players[player.lastHitBy].kills++;
             }
 
+            updateScoreboard();
+
             ws.send(JSON.stringify({
               type: "game_update",
               players: Object.values(players).map(p => ({
-                id: p.id,
-                lives: p.lives,
-                health: p.health,
-                maxHealth: p.maxHealth,
-                kills: p.kills,
-                deaths: p.deaths
+                id: p.id, lives: p.lives, health: p.health, maxHealth: p.maxHealth, kills: p.kills, deaths: p.deaths
               }))
             }));
 
@@ -1049,32 +1768,19 @@
                 if (!players[playerId]) return;
                 const p = players[playerId];
                 
-                const spawnPoints = [
-                  { x: 100, y: 100 },
-                  { x: canvas.width - 100, y: 100 },
-                  { x: 100, y: canvas.height - 100 },
-                  { x: canvas.width - 100, y: canvas.height - 100 }
-                ];
-                const spawn = spawnPoints[Math.floor(Math.random() * 4)];
-                p.x = spawn.x;
-                p.y = spawn.y;
+                const spawn = SPAWN_POINTS[Math.floor(Math.random() * SPAWN_POINTS.length)];
+                p.x = spawn.x; p.y = spawn.y;
                 p.health = p.maxHealth;
                 p.abilityActive = false;
                 p.isRespawning = false;
                 p.abilityCooldown = Date.now() + 2000;
                 p.lastHitBy = null;
                 
-                // 🔊 SOUND: Player respawn
                 audioManager.play('playerRespawn', { volume: 0.5 });
                 
                 ws.send(JSON.stringify({
                   type: "game_update",
-                  players: [{
-                    id: p.id,
-                    health: p.health,
-                    maxHealth: p.maxHealth,
-                    lives: p.lives
-                  }]
+                  players: [{ id: p.id, health: p.health, maxHealth: p.maxHealth, lives: p.lives }]
                 }));
               }, 3000);
             }
@@ -1091,12 +1797,34 @@
 
           let canMoveX = true, canMoveY = true;
 
+          // Check static obstacles
           for (const obs of obstacles) {
-            if (checkCollision({ x: newX, y: player.y, r: player.r }, obs)) {
-              canMoveX = false;
-            }
-            if (checkCollision({ x: player.x, y: newY, r: player.r }, obs)) {
-              canMoveY = false;
+            if (checkCollision({ x: newX, y: player.y, r: player.r }, obs)) canMoveX = false;
+            if (checkCollision({ x: player.x, y: newY, r: player.r }, obs)) canMoveY = false;
+          }
+
+          // Check moving obstacles (dangerous walls)
+          for (const obs of movingObstacles) {
+            // Skip invisible phasing walls
+            if (obs.isPhasing && !obs.visible) continue;
+
+            if (checkCollision({ x: newX, y: player.y, r: player.r }, obs)) canMoveX = false;
+            if (checkCollision({ x: player.x, y: newY, r: player.r }, obs)) canMoveY = false;
+            
+            // Damage on touch
+            if (obs.isDangerous && checkCollision({ x: player.x, y: player.y, r: player.r + 5 }, obs)) {
+              if (now - player.lastDamageWall > 500) { // Damage every 500ms
+                player.lastDamageWall = now;
+                if (!player.abilityActive || CHARACTERS[player.character].ability.effect !== "shield") {
+                  player.health -= obs.damageOnTouch;
+                  ws.send(JSON.stringify({
+                    type: 'player_status',
+                    playerId: player.id,
+                    status: 'damage',
+                    message: `💀 -${obs.damageOnTouch} HP from wall!`
+                  }));
+                }
+              }
             }
           }
 
@@ -1106,166 +1834,104 @@
           player.vx *= 0.92;
           player.vy *= 0.92;
 
+          // Arena events
           if (currentEvent) {
             if (currentEvent.type === 'INFERNO') {
               let touchingWall = false;
-              
               for (const obs of obstacles) {
                 const closestX = Math.max(obs.x, Math.min(player.x, obs.x + obs.w));
                 const closestY = Math.max(obs.y, Math.min(player.y, obs.y + obs.h));
                 const dx = player.x - closestX;
                 const dy = player.y - closestY;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                
-                if (dist < player.r + 15) {
-                  touchingWall = true;
-                  break;
-                }
+                if (Math.sqrt(dx * dx + dy * dy) < player.r + 15) { touchingWall = true; break; }
               }
               
               if (touchingWall && !player.onFire) {
-                player.onFire = {
-                  startTime: Date.now(),
-                  damage: 8
-                };
-                
-                ws.send(JSON.stringify({
-                  type: 'player_status',
-                  playerId: player.id,
-                  status: 'on_fire',
-                  message: '🔥 YOU ARE ON FIRE! BLOW TO EXTINGUISH!'
-                }));
+                player.onFire = { startTime: Date.now(), damage: 8 };
+                ws.send(JSON.stringify({ type: 'player_status', playerId: player.id, status: 'on_fire', message: '🔥 YOU ARE ON FIRE! BLOW TO EXTINGUISH!' }));
               }
             }
             
             if (currentEvent.type === 'BLIZZARD') {
               let protectedByWall = false;
-              const blizzardOriginX = 0;
-              const blizzardOriginY = canvas.height / 2;
-              
               for (const obs of obstacles) {
-                if (obs.x < player.x && obs.x + obs.w > blizzardOriginX) {
-                  if (obs.y < player.y && obs.y + obs.h > player.y) {
-                    protectedByWall = true;
-                    break;
-                  }
+                if (obs.x < player.x && obs.x + obs.w > 0 && obs.y < player.y && obs.y + obs.h > player.y) {
+                  protectedByWall = true; break;
                 }
               }
               
               if (!protectedByWall) {
-                if (!player.blizzardExposure) {
-                  player.blizzardExposure = 0;
-                }
+                if (!player.blizzardExposure) player.blizzardExposure = 0;
                 player.blizzardExposure += 1;
                 
                 if (player.blizzardExposure > 180 && !player.frozen) {
-                  player.frozen = {
-                    startTime: Date.now(),
-                    canMove: false
-                  };
-                  
-                  ws.send(JSON.stringify({
-                    type: 'player_status',
-                    playerId: player.id,
-                    status: 'frozen',
-                    message: '❄️ YOU ARE FROZEN! SHAKE TO BREAK FREE!'
-                  }));
+                  player.frozen = { startTime: Date.now(), canMove: false };
+                  ws.send(JSON.stringify({ type: 'player_status', playerId: player.id, status: 'frozen', message: '❄️ YOU ARE FROZEN! SHAKE TO BREAK FREE!' }));
                 }
-              } else {
-                if (player.blizzardExposure) {
-                  player.blizzardExposure = Math.max(0, player.blizzardExposure - 2);
-                }
+              } else if (player.blizzardExposure) {
+                player.blizzardExposure = Math.max(0, player.blizzardExposure - 2);
               }
               
               if (player.frozen && player.frozen.canMove === false) {
-                player.vx = 0;
-                player.vy = 0;
+                player.vx = 0; player.vy = 0;
               }
             }
           }
 
-          if (player.onFire) {
-            player.health -= player.onFire.damage / 60;
-          }
+          if (player.onFire) player.health -= player.onFire.damage / 60;
 
+          // Healing camps
           camps = camps.filter(camp => {
-            const age = Date.now() - camp.spawnTime;
-            if (age > camp.duration) return false;
-            
-            if (isInZone(player, camp)) {
-              player.health = Math.min(player.maxHealth, player.health + 0.5);
-            }
+            if (Date.now() - camp.spawnTime > camp.duration) return false;
+            if (isInZone(player, camp)) player.health = Math.min(player.maxHealth, player.health + 0.5);
             return true;
           });
 
+          // Special zones
           specialZones.forEach(zone => {
             if (isInZone(player, zone)) {
-              switch (zone.type) {
-                case "heal":
-                  player.health = Math.min(player.maxHealth, player.health + 0.3);
-                  break;
-                case "damage":
-                  if (!player.abilityActive || CHARACTERS[player.character].ability.effect !== "shield") {
-                    player.health -= 0.2;
-                  }
-                  break;
+              if (zone.type === "heal") player.health = Math.min(player.maxHealth, player.health + 0.3);
+              else if (zone.type === "damage" && (!player.abilityActive || CHARACTERS[player.character].ability.effect !== "shield")) {
+                player.health -= 0.2;
               }
             }
           });
 
+          // Power-up drops
           activeDrops = activeDrops.filter(drop => {
             const dx = player.x - drop.x;
             const dy = player.y - drop.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
             
             if (dist < player.r + drop.radius) {
-              switch (drop.effect) {
-                case 'recharge_ability':
-                  player.abilityCooldown = 0;
-                  break;
-                case 'speed_boost':
-                  player.speedBoostEnd = Date.now() + drop.boostDuration;
-                  break;
-                case 'heal':
-                  player.health = Math.min(player.maxHealth, player.health + drop.healAmount);
-                  break;
-              }
+              if (drop.effect === 'recharge_ability') player.abilityCooldown = 0;
+              else if (drop.effect === 'speed_boost') player.speedBoostEnd = Date.now() + drop.boostDuration;
+              else if (drop.effect === 'heal') player.health = Math.min(player.maxHealth, player.health + drop.healAmount);
               
-              // 🔊 SOUND: Collect powerup
               audioManager.play('collectPowerup', { volume: 0.6 });
               
               ws.send(JSON.stringify({
                 type: 'game_update',
-                players: [{ 
-                  id: player.id, 
-                  abilityCooldown: player.abilityCooldown,
-                  health: player.health,
-                  dropCollected: drop.type
-                }]
+                players: [{ id: player.id, abilityCooldown: player.abilityCooldown, health: player.health, dropCollected: drop.type }]
               }));
               
               return false;
             }
             
-            const age = Date.now() - drop.spawnTime;
-            return age < drop.duration;
+            return Date.now() - drop.spawnTime < drop.duration;
           });
         });
 
+        // Update bullets
         bullets = bullets.filter(bullet => {
           bullet.x += bullet.vx;
           bullet.y += bullet.vy;
 
-          if (bullet.x < 0 || bullet.x > canvas.width || bullet.y < 0 || bullet.y > canvas.height) {
-            return false;
-          }
+          if (bullet.x < 0 || bullet.x > canvas.width || bullet.y < 0 || bullet.y > canvas.height) return false;
 
           if (!bullet.pierce) {
-            for (const obs of obstacles) {
-              if (bullet.x > obs.x && bullet.x < obs.x + obs.w &&
-                  bullet.y > obs.y && bullet.y < obs.y + obs.h) {
-                return false;
-              }
+            for (const obs of [...obstacles, ...movingObstacles]) {
+              if (bullet.x > obs.x && bullet.x < obs.x + obs.w && bullet.y > obs.y && bullet.y < obs.y + obs.h) return false;
             }
           }
 
@@ -1274,20 +1940,11 @@
 
             const dx = bullet.x - player.x;
             const dy = bullet.y - player.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-
-            if (dist < player.r) {
-              if (player.abilityActive && CHARACTERS[player.character].ability.effect === "shield") {
-                return false;
-              }
-              
-              if (player.abilityActive && CHARACTERS[player.character].ability.effect === "dash") {
-                return false;
-              }
+            if (Math.sqrt(dx * dx + dy * dy) < player.r) {
+              if (player.abilityActive && (CHARACTERS[player.character].ability.effect === "shield" || CHARACTERS[player.character].ability.effect === "dash")) return false;
               
               player.health -= bullet.damage;
               player.lastHitBy = bullet.owner;
-
               return false;
             }
           }
@@ -1307,16 +1964,15 @@
         if (totalPlayers > 1 && alivePlayers.length === 1) {
           gameState = "ended";
           const winner = alivePlayers[0];
-          const winnerChar = CHARACTERS[winner.character];
           
-          // 🔊 SOUND: Stop music on game end
           audioManager.stopBgMusic();
+          showGameEndScreen(winner, players);
           
           ws.send(JSON.stringify({
             type: "game_end",
             winner: winner.id,
             character: winner.character,
-            characterName: winnerChar.name,
+            characterName: CHARACTERS[winner.character].name,
             kills: winner.kills,
             deaths: winner.deaths
           }));
@@ -1325,13 +1981,12 @@
         if (totalPlayers > 1 && alivePlayers.length === 0) {
           gameState = "ended";
           
-          // 🔊 SOUND: Stop music
           audioManager.stopBgMusic();
+          showGameEndScreen(null, players);
           
           ws.send(JSON.stringify({
             type: "game_end",
             winner: null,
-            character: null,
             isDraw: true
           }));
         }
@@ -1348,24 +2003,21 @@
       function draw() {
         const map = MAPS[currentMap];
         
-        ctx.fillStyle = map.background + "4D";
+        // Clear and draw background
+        ctx.fillStyle = map.background;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+        // Grid
         ctx.strokeStyle = map.gridColor;
         ctx.lineWidth = 1;
         for (let i = 0; i < canvas.width; i += 50) {
-          ctx.beginPath();
-          ctx.moveTo(i, 0);
-          ctx.lineTo(i, canvas.height);
-          ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
         }
         for (let i = 0; i < canvas.height; i += 50) {
-          ctx.beginPath();
-          ctx.moveTo(0, i);
-          ctx.lineTo(canvas.width, i);
-          ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); ctx.stroke();
         }
 
+        // Special zones
         specialZones.forEach(zone => {
           ctx.fillStyle = zone.color + "30";
           ctx.fillRect(zone.x, zone.y, zone.w, zone.h);
@@ -1374,8 +2026,7 @@
           ctx.setLineDash([5, 5]);
           ctx.strokeRect(zone.x, zone.y, zone.w, zone.h);
           ctx.setLineDash([]);
-
-          ctx.font = "bold 24px Arial";
+          ctx.font = "bold 24px 'Segoe UI'";
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
           ctx.fillStyle = zone.color;
@@ -1383,20 +2034,21 @@
           ctx.fillText(icon, zone.x + zone.w/2, zone.y + zone.h/2);
         });
 
+        // Healing camps
         camps.forEach(camp => {
           ctx.fillStyle = camp.color + "40";
           ctx.fillRect(camp.x, camp.y, camp.w, camp.h);
           ctx.strokeStyle = camp.color;
           ctx.lineWidth = 3;
           ctx.strokeRect(camp.x, camp.y, camp.w, camp.h);
-
           ctx.fillStyle = camp.color;
-          ctx.font = "bold 30px Arial";
+          ctx.font = "bold 30px 'Segoe UI'";
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
           ctx.fillText("+", camp.x + camp.w / 2, camp.y + camp.h / 2);
         });
 
+        // Static obstacles
         obstacles.forEach(obs => {
           ctx.fillStyle = obs.color;
           ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
@@ -1409,13 +2061,69 @@
             ctx.lineWidth = 2;
           }
           ctx.strokeRect(obs.x, obs.y, obs.w, obs.h);
-
-          ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
-          for (let i = 0; i < 5; i++) {
-            ctx.fillRect(obs.x + Math.random() * obs.w, obs.y + Math.random() * obs.h, 3, 3);
-          }
         });
 
+        // Moving obstacles (dangerous walls)
+        movingObstacles.forEach(obs => {
+          // Skip invisible phasing walls
+          if (obs.isPhasing && !obs.visible) return;
+
+          // Apply transparency to phasing walls based on time
+          let alpha = 1;
+          if (obs.isPhasing) {
+            const elapsed = Date.now() - obs.lastPhaseTime;
+            const progress = elapsed / obs.phaseInterval;
+            // Fade in/out effect
+            if (obs.visible) {
+              alpha = progress < 0.2 ? progress / 0.2 : (progress > 0.8 ? (1 - progress) / 0.2 : 1);
+            }
+          }
+
+          ctx.save();
+          ctx.globalAlpha = alpha;
+
+          // Glow effect
+          ctx.shadowColor = obs.glowColor;
+          ctx.shadowBlur = 15;
+          ctx.fillStyle = obs.color;
+          ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+          ctx.shadowBlur = 0;
+
+          // Danger stripes
+          ctx.strokeStyle = obs.glowColor;
+          ctx.lineWidth = 3;
+          ctx.strokeRect(obs.x, obs.y, obs.w, obs.h);
+
+          // Warning pattern
+          ctx.fillStyle = obs.glowColor + '60';
+          const stripeWidth = 10;
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(obs.x, obs.y, obs.w, obs.h);
+          ctx.clip();
+          for (let i = -obs.w; i < obs.w + obs.h; i += stripeWidth * 2) {
+            ctx.beginPath();
+            ctx.moveTo(obs.x + i, obs.y);
+            ctx.lineTo(obs.x + i + obs.h, obs.y + obs.h);
+            ctx.lineTo(obs.x + i + obs.h + stripeWidth, obs.y + obs.h);
+            ctx.lineTo(obs.x + i + stripeWidth, obs.y);
+            ctx.fill();
+          }
+          ctx.restore();
+
+          // Danger icon (not for phasing walls)
+          if (!obs.isPhasing) {
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 16px "Segoe UI"';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('⚠️', obs.x + obs.w/2, obs.y + obs.h/2);
+          }
+
+          ctx.restore(); // Restore global alpha
+        });
+
+        // Power-up drops
         activeDrops.forEach(drop => {
           const age = Date.now() - drop.spawnTime;
           const pulse = 1 + Math.sin(age / 200) * 0.2;
@@ -1437,7 +2145,7 @@
           
           ctx.shadowBlur = 0;
           ctx.fillStyle = '#fff';
-          ctx.font = 'bold 20px Arial';
+          ctx.font = 'bold 20px "Segoe UI"';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillText(drop.icon, drop.x, drop.y);
@@ -1446,6 +2154,7 @@
         });
         ctx.shadowBlur = 0;
 
+        // Bullets
         bullets.forEach(bullet => {
           ctx.fillStyle = bullet.color;
           ctx.shadowColor = bullet.color;
@@ -1465,39 +2174,26 @@
         });
         ctx.shadowBlur = 0;
 
+        // Arena events overlay
         if (currentEvent) {
           ctx.fillStyle = currentEvent.backgroundTint;
           ctx.fillRect(0, 0, canvas.width, canvas.height);
           
           if (currentEvent.type === 'INFERNO') {
-            obstacles.forEach(obs => {
-              ctx.fillStyle = currentEvent.wallColor + '40';
-              ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
-            });
-            
             for (let i = 0; i < 20; i++) {
               const x = Math.random() * canvas.width;
               const y = canvas.height - (Date.now() / 10 + i * 50) % canvas.height;
-              const size = 5 + Math.random() * 10;
-              
               ctx.fillStyle = `rgba(255, ${100 + Math.random() * 100}, 0, 0.6)`;
               ctx.beginPath();
-              ctx.arc(x, y, size, 0, Math.PI * 2);
+              ctx.arc(x, y, 5 + Math.random() * 10, 0, Math.PI * 2);
               ctx.fill();
             }
           }
           
           if (currentEvent.type === 'BLIZZARD') {
-            obstacles.forEach(obs => {
-              ctx.fillStyle = currentEvent.wallColor + '40';
-              ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
-            });
-            
             for (let i = 0; i < 100; i++) {
-              const windSpeed = 3;
-              const x = ((Date.now() / 20) * windSpeed + i * 30) % (canvas.width + 100) - 100;
+              const x = ((Date.now() / 20) * 3 + i * 30) % (canvas.width + 100) - 100;
               const y = (i * 17) % canvas.height;
-              
               ctx.fillStyle = currentEvent.particleColor;
               ctx.fillRect(x, y, 3, 8);
             }
@@ -1507,40 +2203,34 @@
             ctx.strokeStyle = currentEvent.gridColor;
             ctx.lineWidth = 2;
             const waveOffset = Math.sin(Date.now() / 200) * 20;
-            
             for (let i = 0; i < canvas.width; i += 50) {
               ctx.beginPath();
               ctx.moveTo(i + waveOffset, 0);
               ctx.lineTo(i - waveOffset, canvas.height);
               ctx.stroke();
             }
-            
-            obstacles.forEach(obs => {
-              ctx.fillStyle = currentEvent.wallColor + '30';
-              ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
-            });
           }
           
+          // Event timer bar
           const eventAge = Date.now() - eventStartTime;
           const timeLeft = currentEvent.duration - eventAge;
           const progress = timeLeft / currentEvent.duration;
           
           ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
           ctx.fillRect(canvas.width/2 - 200, 10, 400, 30);
-          
           ctx.fillStyle = '#ff4500';
           ctx.fillRect(canvas.width/2 - 195, 15, 390 * progress, 20);
-          
           ctx.fillStyle = '#fff';
-          ctx.font = 'bold 16px Arial';
+          ctx.font = 'bold 16px "Segoe UI"';
           ctx.textAlign = 'center';
           ctx.fillText(`${currentEvent.icon} ${currentEvent.name} - ${Math.ceil(timeLeft/1000)}s`, canvas.width/2, 28);
         }
 
+        // Players
         Object.values(players).forEach(player => {
           if (player.lives <= 0) {
             ctx.fillStyle = "#666";
-            ctx.font = "bold 40px Arial";
+            ctx.font = "bold 40px 'Segoe UI'";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             ctx.fillText("❌", player.x, player.y);
@@ -1555,12 +2245,11 @@
             ctx.arc(player.x, player.y - 10, 15, Math.PI, 0, false);
             ctx.fill();
             ctx.fillStyle = "#fff";
-            ctx.font = "20px Arial";
+            ctx.font = "20px 'Segoe UI'";
             ctx.textAlign = "center";
             ctx.fillText("💀", player.x, player.y + 5);
-            
             ctx.fillStyle = "#ff4444";
-            ctx.font = "12px Arial";
+            ctx.font = "12px 'Segoe UI'";
             ctx.fillText(`${player.lives} ❤️`, player.x, player.y + 30);
             return;
           }
@@ -1568,11 +2257,13 @@
           const char = CHARACTERS[player.character];
           const ability = char.ability;
 
+          // Shadow
           ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
           ctx.beginPath();
           ctx.ellipse(player.x, player.y + player.r + 5, player.r, player.r * 0.3, 0, 0, Math.PI * 2);
           ctx.fill();
 
+          // Shield effect
           if (player.abilityActive && ability.effect === "shield") {
             ctx.strokeStyle = "#00ffff";
             ctx.lineWidth = 4;
@@ -1584,6 +2275,7 @@
             ctx.shadowBlur = 0;
           }
 
+          // Dash trail
           if (player.abilityActive && ability.effect === "dash") {
             ctx.fillStyle = char.color + "40";
             for (let i = 1; i <= 3; i++) {
@@ -1593,6 +2285,7 @@
             }
           }
 
+          // Pierce indicator
           if (player.pierceNextShot) {
             ctx.strokeStyle = "#ff00ff";
             ctx.lineWidth = 2;
@@ -1603,54 +2296,46 @@
             ctx.setLineDash([]);
           }
 
+          // Fire effect
           if (player.onFire) {
             for (let i = 0; i < 5; i++) {
               const angle = Math.random() * Math.PI * 2;
               const dist = player.r + Math.random() * 10;
-              const fx = player.x + Math.cos(angle) * dist;
-              const fy = player.y + Math.sin(angle) * dist - Math.random() * 20;
-              
               ctx.fillStyle = `rgba(255, ${100 + Math.random() * 100}, 0, ${0.5 + Math.random() * 0.5})`;
               ctx.beginPath();
-              ctx.arc(fx, fy, 3 + Math.random() * 4, 0, Math.PI * 2);
+              ctx.arc(player.x + Math.cos(angle) * dist, player.y + Math.sin(angle) * dist - Math.random() * 20, 3 + Math.random() * 4, 0, Math.PI * 2);
               ctx.fill();
             }
           }
 
+          // Frozen effect
           if (player.frozen) {
             ctx.strokeStyle = '#00BFFF';
             ctx.lineWidth = 4;
             ctx.shadowColor = '#00BFFF';
             ctx.shadowBlur = 15;
-            
             for (let i = 0; i < 6; i++) {
               const angle = (Math.PI / 3) * i;
               ctx.beginPath();
               ctx.moveTo(player.x, player.y);
-              ctx.lineTo(
-                player.x + Math.cos(angle) * (player.r + 10),
-                player.y + Math.sin(angle) * (player.r + 10)
-              );
+              ctx.lineTo(player.x + Math.cos(angle) * (player.r + 10), player.y + Math.sin(angle) * (player.r + 10));
               ctx.stroke();
             }
-            
             ctx.shadowBlur = 0;
           }
 
+          // Player shape
           ctx.fillStyle = char.color;
           ctx.shadowColor = char.color;
           ctx.shadowBlur = 20;
           ctx.beginPath();
           
-          const r = player.r;
-          const x = player.x;
-          const y = player.y;
+          const r = player.r, x = player.x, y = player.y;
           
           if (player.character === 'TANK') {
             for (let i = 0; i < 6; i++) {
               const angle = (Math.PI / 3) * i - Math.PI / 2;
-              const px = x + r * Math.cos(angle);
-              const py = y + r * Math.sin(angle);
+              const px = x + r * Math.cos(angle), py = y + r * Math.sin(angle);
               i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
             }
             ctx.closePath();
@@ -1664,8 +2349,7 @@
           } else if (player.character === 'BALANCED') {
             for (let i = 0; i < 5; i++) {
               const angle = (Math.PI * 2 / 5) * i - Math.PI / 2;
-              const px = x + r * Math.cos(angle);
-              const py = y + r * Math.sin(angle);
+              const px = x + r * Math.cos(angle), py = y + r * Math.sin(angle);
               i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
             }
             ctx.closePath();
@@ -1682,8 +2366,8 @@
           ctx.fill();
           ctx.shadowBlur = 0;
 
-          const barWidth = 50;
-          const barHeight = 6;
+          // Health bar
+          const barWidth = 50, barHeight = 6;
           const healthPercent = player.health / player.maxHealth;
 
           ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
@@ -1696,22 +2380,26 @@
           ctx.lineWidth = 1;
           ctx.strokeRect(player.x - barWidth / 2, player.y - player.r - 15, barWidth, barHeight);
 
+          // Lives
           ctx.fillStyle = "#ff4444";
-          ctx.font = "10px Arial";
+          ctx.font = "10px 'Segoe UI'";
           ctx.textAlign = "center";
           let hearts = "";
           for (let i = 0; i < player.lives; i++) hearts += "❤️";
           ctx.fillText(hearts, player.x, player.y - player.r - 22);
 
+          // Name
           ctx.fillStyle = "#fff";
-          ctx.font = "bold 12px Arial";
+          ctx.font = "bold 12px 'Segoe UI'";
           ctx.textBaseline = "bottom";
           ctx.fillText(char.name, player.x, player.y - player.r - 32);
 
+          // K/D
           ctx.fillStyle = "#FFD700";
-          ctx.font = "10px Arial";
+          ctx.font = "10px 'Segoe UI'";
           ctx.fillText(`${player.kills}/${player.deaths}`, player.x, player.y + player.r + 15);
 
+          // Ability cooldown
           const cooldownRemaining = Math.max(0, player.abilityCooldown - Date.now());
           if (cooldownRemaining > 0) {
             const cooldownPercent = cooldownRemaining / ability.cooldown;
@@ -1723,115 +2411,12 @@
             ctx.fill();
           }
         });
-
-        if (gameState !== "ended") {
-          ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-          ctx.fillRect(10, 10, 260, 50 + Object.keys(players).length * 25);
-
-          ctx.fillStyle = "#FFD700";
-          ctx.font = "bold 16px Arial";
-          ctx.textAlign = "left";
-          ctx.textBaseline = "top";
-          ctx.fillText("SCOREBOARD", 20, 15);
-          ctx.fillStyle = "#888";
-          ctx.font = "12px Arial";
-          ctx.fillText(`Map: ${MAPS[currentMap].name}`, 120, 17);
-
-          ctx.font = "14px Arial";
-          let yPos = 45;
-          Object.values(players)
-            .sort((a, b) => b.kills - a.kills || a.deaths - b.deaths)
-            .forEach((player, i) => {
-              const char = CHARACTERS[player.character];
-              const status = player.lives <= 0 ? " ☠️" : player.health <= 0 ? " 💀" : "";
-              ctx.fillStyle = player.lives <= 0 ? "#666" : char.color;
-              ctx.fillText(
-                `${i + 1}. ${char.name}: ${player.kills}K/${player.deaths}D [${player.lives}❤️]${status}`,
-                20, yPos
-              );
-              yPos += 25;
-            });
-        }
-
-        if (gameState === "ended") {
-          ctx.fillStyle = "rgba(0, 0, 0, 0.9)";
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-          
-          const winner = Object.values(players).find(p => p.lives > 0);
-          const numPlayers = Object.keys(players).length;
-          
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-          
-          if (winner) {
-            const char = CHARACTERS[winner.character];
-            
-            ctx.font = "60px Arial";
-            ctx.fillText("🏆", canvas.width/2, 80);
-            
-            ctx.shadowColor = char.color;
-            ctx.shadowBlur = 30;
-            ctx.fillStyle = char.color;
-            ctx.font = "bold 60px Arial";
-            ctx.fillText("WINNER!", canvas.width/2, 160);
-            ctx.shadowBlur = 0;
-            
-            ctx.fillStyle = "#fff";
-            ctx.font = "bold 45px Arial";
-            ctx.fillText(char.name, canvas.width/2, 230);
-            
-            ctx.fillStyle = "#FFD700";
-            ctx.font = "24px Arial";
-            ctx.fillText(`${winner.kills} Kills | ${winner.deaths} Deaths`, canvas.width/2, 280);
-            
-            ctx.fillStyle = char.color;
-            ctx.shadowColor = char.color;
-            ctx.shadowBlur = 30;
-            ctx.beginPath();
-            ctx.arc(canvas.width/2, 340, 35, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.shadowBlur = 0;
-          } else {
-            ctx.fillStyle = "#ff6666";
-            ctx.font = "bold 50px Arial";
-            ctx.fillText("💀 DRAW! 💀", canvas.width/2, 150);
-            ctx.fillStyle = "#aaa";
-            ctx.font = "24px Arial";
-            ctx.fillText("All players eliminated", canvas.width/2, 210);
-          }
-          
-          const scoreboardY = winner ? 400 : 280;
-          const scoreboardHeight = 40 + numPlayers * 28;
-          
-          ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
-          ctx.fillRect(canvas.width/2 - 180, scoreboardY, 360, scoreboardHeight);
-          
-          ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
-          ctx.lineWidth = 2;
-          ctx.strokeRect(canvas.width/2 - 180, scoreboardY, 360, scoreboardHeight);
-          
-          ctx.fillStyle = "#fff";
-          ctx.font = "bold 18px Arial";
-          ctx.fillText("FINAL SCORES", canvas.width/2, scoreboardY + 22);
-          
-          ctx.font = "16px Arial";
-          let finalY = scoreboardY + 50;
-          Object.values(players)
-            .sort((a, b) => b.kills - a.kills || a.deaths - b.deaths)
-            .forEach((p, i) => {
-              const c = CHARACTERS[p.character];
-              ctx.fillStyle = p.lives > 0 ? c.color : "#888";
-              const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : "  ";
-              ctx.fillText(`${medal} ${c.name}: ${p.kills} Kills / ${p.deaths} Deaths`, canvas.width/2, finalY);
-              finalY += 28;
-            });
-        }
       }
 
       function loop() {
         update();
         draw();
-        requestAnimationFrame(loop);
+        gameLoopId = requestAnimationFrame(loop);
       }
 
       loop();
