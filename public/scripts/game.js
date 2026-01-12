@@ -1,4 +1,5 @@
 // ============ AUDIO SYSTEM ============
+// ============ AUDIO SYSTEM ============
 class AudioManager {
   constructor() {
     this.sounds = {};
@@ -105,53 +106,32 @@ class AudioManager {
 const audioManager = new AudioManager();
 let shouldResumeAudio = false;
 
-document.getElementById("muteBtn").onclick = () => {
-  const isMuted = audioManager.toggleMute();
-  document.getElementById("muteBtn").textContent = isMuted ? "MUTED" : "SOUND";
-};
-
-document.getElementById("volumeSlider").oninput = (e) => {
-  audioManager.setVolume(e.target.value / 100);
-};
-
-function restoreAudioState() {
-  const stateRaw = localStorage.getItem("geo_audio_state");
-  if (!stateRaw) return;
-
-  let state;
-  try {
-    state = JSON.parse(stateRaw);
-  } catch (err) {
+// ============ INITIALIZATION - MUST RUN AFTER DOM LOADS ============
+function initializeAudioControls() {
+  const muteBtn = document.getElementById("muteBtn");
+  const volumeSlider = document.getElementById("volumeSlider");
+  
+  if (!muteBtn || !volumeSlider) {
+    console.error("Audio control elements not found!");
     return;
   }
 
-  if (typeof state.volume === "number") {
-    audioManager.setVolume(state.volume);
-    document.getElementById("volumeSlider").value = Math.round(
-      state.volume * 100
-    );
-  }
+  muteBtn.onclick = () => {
+    const isMuted = audioManager.toggleMute();
+    muteBtn.textContent = isMuted ? "MUTED" : "SOUND";
+  };
 
-  if (typeof state.muted === "boolean") {
-    audioManager.setMuted(state.muted);
-    document.getElementById("muteBtn").textContent = state.muted
-      ? "MUTED"
-      : "SOUND";
-  }
+  volumeSlider.oninput = (e) => {
+    audioManager.setVolume(e.target.value / 100);
+  };
 
-  if (audioManager.bgMusic && typeof state.time === "number") {
-    audioManager.bgMusic.currentTime = state.time;
-  }
-
-  shouldResumeAudio = Boolean(state.playing && !audioManager.isMuted);
+  // Note: Removed localStorage - using in-memory audio state only
+  audioManager.loadSounds().then(() => {
+    if (shouldResumeAudio) {
+      audioManager.playBgMusic();
+    }
+  });
 }
-
-audioManager.loadSounds().then(() => {
-  restoreAudioState();
-  if (shouldResumeAudio) {
-    audioManager.playBgMusic();
-  }
-});
 
 function resumeAudioOnInteraction() {
   if (!shouldResumeAudio || audioManager.isMuted || !audioManager.bgMusic)
@@ -160,8 +140,19 @@ function resumeAudioOnInteraction() {
   audioManager.playBgMusic();
 }
 
-document.body.addEventListener("click", resumeAudioOnInteraction);
-document.body.addEventListener("touchstart", resumeAudioOnInteraction);
+// Initialize when DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    initializeAudioControls();
+    document.body.addEventListener("click", resumeAudioOnInteraction);
+    document.body.addEventListener("touchstart", resumeAudioOnInteraction);
+  });
+} else {
+  // DOM already loaded
+  initializeAudioControls();
+  document.body.addEventListener("click", resumeAudioOnInteraction);
+  document.body.addEventListener("touchstart", resumeAudioOnInteraction);
+}
 
 // ============ GAME CODE ============
 const canvas = document.getElementById("gameCanvas");
@@ -186,6 +177,8 @@ let powerUps = [];
 let currentMap = "training";
 let gameLoopId = null;
 let pendingGameStart = null;
+
+// ... rest of your game code stays exactly the same ...
 
 const MAX_LIVES = 3;
 const PLAYER_COLORS = [
