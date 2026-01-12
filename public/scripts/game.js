@@ -1271,6 +1271,11 @@ document.getElementById("connectBtn").onclick = () => {
     connectBtn.disabled = true;
     if (mapSelectList) mapSelectList.classList.remove("open");
 
+    // Enable audio on user interaction
+    audioManager.playBgMusic().catch(() => {
+      console.log("Audio will start when game begins");
+    });
+
     if (pendingGameStart) {
       const pending = pendingGameStart;
       pendingGameStart = null;
