@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>GEO-SHOOTER Controller</title>
+
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22><text y=%2250%%22 font-size=%2252%22>🎮</text></svg>"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="styles/controller.css"/>
+  </head>
+  <body>
+    <div class="header">
+      <h1>GEO-SHOOTER</h1>
+      <p id="status">🔴 Disconnected</p>
+    </div>
+
+    <div id="room-section">
+      <div class="room-container">
+        <h2>Join Battle</h2>
+        <input
+          type="text"
+          id="room-input"
+          placeholder="Room ID"
+          value="war123"
+        />
+        <button id="join-btn">JOIN ROOM</button>
+      </div>
+    </div>
+
+    <div id="character-select">
+      <h2>Choose Your Fighter</h2>
+
+      <div class="character-grid">
+        <div class="character-card" data-char="TANK">
+          <div class="character-icon">
+            <svg viewBox="0 0 100 100">
+              <polygon
+                points="50,5 93,28 93,72 50,95 7,72 7,28"
+                fill="#4CAF50"
+                stroke="#2E7D32"
+                stroke-width="4"
+              />
+            </svg>
+          </div>
+          <h3 style="color: #4caf50">Tank</h3>
+          <div class="role">Defender</div>
+          <div class="ability-info">Shield</div>
+        </div>
+
+        <div class="character-card" data-char="SNIPER">
+          <div class="character-icon">
+            <svg viewBox="0 0 100 100">
+              <polygon
+                points="50,5 95,85 5,85"
+                fill="#2196F3"
+                stroke="#1565C0"
+                stroke-width="4"
+              />
+            </svg>
+          </div>
+          <h3 style="color: #2196f3">Sniper</h3>
+          <div class="role">Precision</div>
+          <div class="ability-info">Pierce</div>
+        </div>
+
+        <div class="character-card" data-char="RUNNER">
+          <div class="character-icon">
+            <svg viewBox="0 0 100 100">
+              <circle
+                cx="50"
+                cy="50"
+                r="42"
+                fill="#FFC107"
+                stroke="#FF8F00"
+                stroke-width="4"
+              />
+            </svg>
+          </div>
+          <h3 style="color: #ffc107">Runner</h3>
+          <div class="role">Speedster</div>
+          <div class="ability-info">Dash</div>
+        </div>
+
+        <div class="character-card" data-char="BALANCED">
+          <div class="character-icon">
+            <svg viewBox="0 0 100 100">
+              <polygon
+                points="50,5 97,38 79,95 21,95 3,38"
+                fill="#9C27B0"
+                stroke="#6A1B9A"
+                stroke-width="4"
+              />
+            </svg>
+          </div>
+          <h3 style="color: #9c27b0">Balanced</h3>
+          <div class="role">All-Rounder</div>
+          <div class="ability-info">Heal</div>
+        </div>
+
+        <div class="character-card" data-char="ASSAULT">
+          <div class="character-icon">
+            <svg viewBox="0 0 100 100">
+              <polygon
+                points="50,5 95,50 50,95 5,50"
+                fill="#FF5722"
+                stroke="#D84315"
+                stroke-width="4"
+              />
+            </svg>
+          </div>
+          <h3 style="color: #ff5722">Assault</h3>
+          <div class="role">Aggressor</div>
+          <div class="ability-info">Bullet Storm</div>
+        </div>
+      </div>
+
+      <div id="radar-section">
+        <div id="radar-container">
+          <div id="selected-name">Select a character</div>
+          <div id="selected-ability">-</div>
+          <canvas id="radarChart"></canvas>
+        </div>
+      </div>
+
+      <button id="confirm-btn" disabled>SELECT CHARACTER</button>
+    </div>
+
+    <div id="rotation-message">
+      <div class="rotation-prompt">
+        <h2>Setup Instructions</h2>
+        <p><strong>LOCK your screen in PORTRAIT mode</strong></p>
+        <p>Rotate your phone 90 degrees counterclockwise</p>
+        <p>Tap when ready to calibrate</p>
+        <button id="rotation-ready-btn">I'M READY</button>
+      </div>
+    </div>
+
+    <div id="axis-calibration">
+      <div style="max-width: 500px; margin: 0 auto; text-align: center">
+        <h2 style="color: #ff6b35; margin-bottom: 1.5rem">
+          Calibrate Controls
+        </h2>
+
+        <div
+          style="
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+          "
+        >
+          <p style="font-size: 0.9rem; margin-bottom: 0.5rem; color: #888">
+            Try to hit the red walls by tilting your device. Adjust sensitivity
+            until it feels right.
+          </p>
+          <p style="font-size: 1.1rem; margin-bottom: 1rem">
+            Tilt and watch the ball:
+          </p>
+
+          <div
+            style="
+              position: relative;
+              width: 200px;
+              height: 200px;
+              margin: 1rem auto;
+              background: rgba(0, 0, 0, 0.3);
+              border-radius: 15px;
+              border: 2px solid #ff4500;
+            "
+          >
+            <div
+              id="preview-player"
+              style="
+                position: absolute;
+                width: 30px;
+                height: 30px;
+                background: #00ff88;
+                border-radius: 50%;
+                top: 85px;
+                left: 85px;
+                transition: all 0.1s;
+                box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+              "
+            ></div>
+          </div>
+
+          <div
+            style="
+              font-family: monospace;
+              font-size: 0.8rem;
+              margin: 1rem 0;
+              color: #888;
+            "
+          >
+            <div>
+              Raw: X=<span id="cal-raw-x">0.00</span> Y=<span id="cal-raw-y"
+                >0.00</span
+              >
+            </div>
+            <div style="margin-top: 0.5rem; color: #00bcd4">
+              Move: X=<span id="cal-move-x">0.00</span> Y=<span id="cal-move-y"
+                >0.00</span
+              >
+            </div>
+          </div>
+        </div>
+
+        <div class="sensitivity-controls">
+          <h3>Fine-tune Sensitivity</h3>
+          <p style="font-size: 0.8rem; color: #888; margin-bottom: 0.8rem">
+            Tap to increase sensitivity in each direction
+          </p>
+
+          <div class="sensitivity-grid">
+            <button class="sensitivity-btn" id="sens-up">More UP</button>
+            <button class="sensitivity-btn" id="sens-down">More DOWN</button>
+            <button class="sensitivity-btn" id="sens-left">More LEFT</button>
+            <button class="sensitivity-btn" id="sens-right">More RIGHT</button>
+          </div>
+
+          <div class="sensitivity-values">
+            <div>UP<br /><span class="value" id="sens-up-val">1.0x</span></div>
+            <div>
+              DOWN<br /><span class="value" id="sens-down-val">1.0x</span>
+            </div>
+            <div>
+              LEFT<br /><span class="value" id="sens-left-val">1.0x</span>
+            </div>
+            <div>
+              RIGHT<br /><span class="value" id="sens-right-val">1.0x</span>
+            </div>
+          </div>
+        </div>
+
+        <div
+          style="
+            background: rgba(255, 69, 0, 0.1);
+            border: 2px solid #ff4500;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+          "
+        >
+          <p style="font-size: 1rem; margin-bottom: 0.5rem; font-weight: bold">
+            Test the movement:
+          </p>
+          <p style="font-size: 0.85rem; color: #ccc; margin-bottom: 1rem">
+            Tilt LEFT → Ball LEFT<br />
+            Tilt RIGHT → Ball RIGHT<br />
+            Tilt FORWARD → Ball UP<br />
+            Tilt BACK → Ball DOWN
+          </p>
+
+          <div
+            style="
+              display: flex;
+              gap: 0.8rem;
+              justify-content: center;
+              flex-wrap: wrap;
+              margin-top: 1rem;
+            "
+          >
+            <button
+              id="cal-correct"
+              style="
+                padding: 1rem 2rem;
+                font-size: 1.1rem;
+                font-weight: bold;
+                background: linear-gradient(135deg, #00ff88, #00cc66);
+                color: #111;
+                border: none;
+                border-radius: 10px;
+                cursor: pointer;
+              "
+            >
+              ✓ Feels Good!
+            </button>
+
+            <button
+              id="cal-invert-x"
+              style="
+                padding: 0.8rem 1.2rem;
+                font-size: 0.9rem;
+                background: rgba(255, 255, 255, 0.1);
+                color: #fff;
+                border: 2px solid #ff4500;
+                border-radius: 10px;
+                cursor: pointer;
+              "
+            >
+              Flip Up/Down
+            </button>
+
+            <button
+              id="cal-invert-y"
+              style="
+                padding: 0.8rem 1.2rem;
+                font-size: 0.9rem;
+                background: rgba(255, 255, 255, 0.1);
+                color: #fff;
+                border: 2px solid #ff4500;
+                border-radius: 10px;
+                cursor: pointer;
+              "
+            >
+              Flip Left/Right
+            </button>
+
+            <button
+              id="cal-swap-axes"
+              style="
+                padding: 0.8rem 1.2rem;
+                font-size: 0.9rem;
+                background: rgba(255, 255, 255, 0.1);
+                color: #fff;
+                border: 2px solid #ff4500;
+                border-radius: 10px;
+                cursor: pointer;
+              "
+            >
+              Swap Axes
+            </button>
+          </div>
+        </div>
+
+        <button
+          id="cal-reset"
+          style="
+            padding: 0.8rem 1.5rem;
+            font-size: 0.9rem;
+            background: rgba(255, 255, 255, 0.05);
+            color: #888;
+            border: 1px solid #666;
+            border-radius: 8px;
+            cursor: pointer;
+          "
+        >
+          Reset to Default
+        </button>
+      </div>
+    </div>
+
+    <div id="game-controller">
+      <button id="recalibrate-btn">Recalibrate</button>
+      <div id="event-notification" class="hidden">
+        <div id="event-icon"></div>
+        <div id="event-text">
+          <h3 id="event-title">EVENT</h3>
+          <p id="event-desc">Description goes here</p>
+        </div>
+      </div>
+
+      <div class="action-buttons">
+        <button id="ability-btn">
+          <span id="ability-icon">⚡</span>
+          <div
+            class="cooldown-overlay"
+            id="cooldown-overlay"
+            style="height: 0%"
+          ></div>
+          <span
+            class="cooldown-text"
+            id="cooldown-text"
+            style="display: none"
+          ></span>
+        </button>
+
+        <button id="shoot-btn">FIRE</button>
+      </div>
+    </div>
+
+    <div class="powerup-flash" id="powerup-flash"></div>
+
+    <div id="game-over">
+      <h2 id="game-over-title">ELIMINATED</h2>
+      <div class="stats" id="game-over-stats"></div>
+    </div>
+
+    <script src="scripts/controller.js"></script>
+  </body>
+</html>

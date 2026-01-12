@@ -1,0 +1,690 @@
+/* 1. Define the Font */
+      @font-face {
+        font-family: "LostEntity";
+        src: url("../fonts/LostEntity-8OmW2.otf") format("opentype");
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      /* 2. Apply ONLY to Main Titles (Landing, Room, Char Select, Setup) */
+      /* This ensures inputs, status text, and descriptions stay readable */
+      .header h1,               /* "GEOSHOOTER" */
+      #room-section h2,         /* "Join Battle" */
+      #character-select h2,     /* "Choose Your Fighter" */
+      .rotation-prompt h2,      /* "Setup Instructions" */
+      #axis-calibration h2,     /* "Calibrate Controls" */
+      #game-over h2 {           /* "ELIMINATED/VICTORY" */
+        font-family: "LostEntity", "Segoe UI", sans-serif;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+      }
+
+      /* 3. Apply to EVERYTHING in the Game Controller HUD */
+      /* You wanted the whole controller interface to have the font */
+      #game-controller,
+      #game-controller button,  /* Recalibrate, Fire */
+      #event-text h3,           /* Event Titles */
+      #event-text p {           /* Event Descriptions */
+        font-family: "LostEntity", "Segoe UI", sans-serif;
+        text-transform: uppercase;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+      }
+
+      html,
+      body {
+        overscroll-behavior: contain;
+        -webkit-text-size-adjust: 100%;
+      }
+
+      body {
+        font-family: "Segoe UI", sans-serif;
+        background: linear-gradient(135deg, #0a0e27, #1a1f3a);
+        color: #eee;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      .header {
+        text-align: center;
+        padding: 1rem;
+        background: rgba(0, 0, 0, 0.3);
+        border-bottom: 2px solid #ff4500;
+      }
+
+      .header h1 {
+        font-size: 1.5rem;
+        color: #ff6b35;
+        text-shadow: 0 0 10px rgba(255, 69, 0, 0.5);
+      }
+
+      #status {
+        margin-top: 0.5rem;
+        font-size: 0.9rem;
+        padding: 0.3rem 1rem;
+        border-radius: 20px;
+        display: inline-block;
+        background: rgba(0, 0, 0, 0.3);
+      }
+
+      /* Room Connection Screen */
+      #room-section {
+        padding: 2rem;
+        text-align: center;
+      }
+
+      .room-container {
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 15px;
+        padding: 2rem;
+        max-width: 350px;
+        margin: 2rem auto;
+        border: 2px solid #ff4500;
+      }
+
+      .room-container h2 {
+        margin-bottom: 1.5rem;
+        color: #ff6b35;
+      }
+
+      #room-input {
+        width: 100%;
+        padding: 1rem;
+        font-size: 1.2rem;
+        border: 2px solid #ff4500;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+        text-align: center;
+        margin-bottom: 1rem;
+        outline: none;
+      }
+
+      #room-input:focus {
+        border-color: #ff6b35;
+        box-shadow: 0 0 15px rgba(255, 69, 0, 0.5);
+      }
+
+      #join-btn {
+        width: 100%;
+        padding: 1rem;
+        font-size: 1.2rem;
+        font-weight: bold;
+        background: linear-gradient(135deg, #ff4500, #ff6b35);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+
+      #join-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(255, 69, 0, 0.5);
+      }
+
+      /* Character Selection Screen - SINGLE COLUMN */
+      #character-select {
+        padding: 1rem;
+        display: none;
+        max-width: 100vw;
+        overflow-y: auto;
+      }
+
+      #character-select h2 {
+        text-align: center;
+        margin-bottom: 1rem;
+        color: #fff;
+        font-size: 1.3rem;
+      }
+
+      .character-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+        max-width: 400px;
+        margin: 0 auto;
+        padding: 0 1rem;
+      }
+
+      .character-card {
+        background: rgba(255, 255, 255, 0.05);
+        border: 2px solid #333;
+        border-radius: 12px;
+        padding: 1rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-align: center;
+      }
+
+      .character-card:hover {
+        transform: translateY(-3px);
+        border-color: #ff4500;
+      }
+
+      .character-card.selected {
+        border-color: #00ff88;
+        background: rgba(0, 255, 136, 0.1);
+        box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+      }
+
+      .character-icon {
+        width: 50px;
+        height: 50px;
+        margin: 0 auto 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .character-icon svg {
+        width: 100%;
+        height: 100%;
+      }
+
+      .character-card h3 {
+        font-size: 1rem;
+        margin-bottom: 0.3rem;
+      }
+
+      .character-card .role {
+        font-size: 0.7rem;
+        color: #888;
+        text-transform: uppercase;
+      }
+
+      .character-card .ability-info {
+        font-size: 0.75rem;
+        color: #00bcd4;
+        margin-top: 0.3rem;
+      }
+
+      /* Radar Chart Section */
+      #radar-section {
+        padding: 1rem;
+        text-align: center;
+      }
+
+      #radar-container {
+        max-width: 320px;
+        margin: 0 auto;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 15px;
+        padding: 1.5rem 1rem 1rem;
+      }
+
+      #selected-name {
+        font-size: 1.3rem;
+        font-weight: bold;
+        margin-bottom: 0.3rem;
+      }
+
+      #selected-ability {
+        font-size: 0.9rem;
+        color: #00bcd4;
+        margin-bottom: 0.5rem;
+      }
+
+      /* Confirm Button */
+      #confirm-btn {
+        display: block;
+        width: 80%;
+        max-width: 300px;
+        margin: 1rem auto;
+        padding: 1rem;
+        font-size: 1.2rem;
+        font-weight: bold;
+        background: linear-gradient(135deg, #ff4500, #ff6b35);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 4px 15px rgba(255, 69, 0, 0.4);
+      }
+
+      #confirm-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(255, 69, 0, 0.6);
+      }
+
+      #confirm-btn:disabled {
+        background: #333;
+        cursor: not-allowed;
+        box-shadow: none;
+      }
+
+      /* Rotation Message */
+      #rotation-message {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.95);
+        z-index: 150;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .rotation-prompt {
+        background: rgba(255, 69, 0, 0.1);
+        border: 3px solid #ff4500;
+        border-radius: 20px;
+        padding: 2rem;
+        max-width: 350px;
+        text-align: center;
+      }
+
+      .rotation-prompt h2 {
+        font-size: 1.8rem;
+        margin-bottom: 1.5rem;
+        color: #ff6b35;
+      }
+
+      .rotation-prompt p {
+        font-size: 1rem;
+        margin: 0.8rem 0;
+        color: #ccc;
+      }
+
+      #rotation-ready-btn {
+        /* Top: 3.5rem (Keeps it away from the text)
+         Sides: auto (Centers it)
+         Bottom: 1rem (Closer to the container edge)
+      */
+        margin: 3.5rem auto 1rem;
+
+        /* Slightly reduced side padding makes the button 'shorter' when rotated */
+        padding: 1rem 1rem;
+
+        font-size: 1.2rem;
+        font-weight: bold;
+        background: linear-gradient(135deg, #ff4500, #ff6b35);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+
+        display: block;
+        transform: rotate(90deg);
+        transform-origin: center;
+      }
+
+      #axis-calibration {
+        display: none;
+        position: fixed;
+        background: rgba(0, 0, 0, 0.95);
+        z-index: 160;
+
+        /* Rotation Setup */
+        transform: rotate(90deg);
+        transform-origin: center center;
+        width: 100vh;
+        height: 100vw;
+
+        /* CENTERING FIX:
+         We subtract 3rem from 'top' to pull the whole screen LEFT visually.
+         (In portrait coordinates, decreasing 'top' moves things Up, which is Left in landscape)
+      */
+        top: calc((100vh - 100vw) / 2 - 3rem);
+        left: calc((100vw - 100vh) / 2);
+
+        overflow-y: auto;
+        padding: 2rem;
+      }
+
+      .sensitivity-controls {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 1rem;
+        margin: 1rem 0;
+      }
+
+      .sensitivity-controls h3 {
+        font-size: 1rem;
+        margin-bottom: 0.8rem;
+        color: #00bcd4;
+      }
+
+      .sensitivity-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+        margin-bottom: 0.8rem;
+      }
+
+      .sensitivity-btn {
+        padding: 0.6rem;
+        font-size: 0.85rem;
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+        border: 2px solid #555;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .sensitivity-btn:active {
+        background: rgba(0, 188, 212, 0.3);
+        border-color: #00bcd4;
+      }
+
+      .sensitivity-values {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        gap: 0.3rem;
+        font-size: 0.75rem;
+        color: #888;
+        text-align: center;
+        margin-top: 0.5rem;
+      }
+
+      .sensitivity-values div {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 0.3rem;
+        border-radius: 5px;
+      }
+
+      .sensitivity-values .value {
+        color: #00ff88;
+        font-weight: bold;
+      }
+
+      /* Game Controller Screen - LANDSCAPE CONTAINER */
+      #game-controller {
+        display: none;
+        padding: 0;
+
+        /* Rotates the view 90 degrees for landscape */
+        transform: rotate(90deg);
+        transform-origin: center center;
+
+        /* Forces the box to match the screen dimensions after rotation */
+        position: fixed;
+        width: 100vh;
+        height: 100vw;
+        top: calc((100vh - 100vw) / 2);
+        left: calc((100vw - 100vh) / 2);
+
+        overflow: hidden;
+        box-sizing: border-box;
+        pointer-events: none; /* Allows clicks to pass through empty space */
+      }
+
+      #game-controller > * {
+        pointer-events: auto; /* Re-enable clicks on the buttons */
+      }
+
+      /* RECALIBRATE BUTTON - Centered and slightly above the thumb buttons */
+      #recalibrate-btn {
+        position: absolute;
+        left: 44%;
+        bottom: 300px; /* Raised up to sit above the action buttons */
+        transform: translateX(-50%); /* Perfectly centered horizontally */
+
+        padding: 0.8rem 1.5rem;
+        font-size: 0.9rem;
+        font-weight: bold;
+        background: rgba(0, 188, 212, 0.3);
+        color: #00bcd4;
+        border: 2px solid #00bcd4;
+        border-radius: 12px;
+        cursor: pointer;
+        z-index: 20;
+        touch-action: none;
+      }
+
+      #recalibrate-btn:active {
+        background: rgba(0, 188, 212, 0.5);
+      }
+
+      /* Event Notification Box */
+      #event-notification {
+        position: absolute;
+        left: 44%; /* Aligned with recalibrate button */
+        bottom: 160px; /* Positioned under the recalibrate button (300px) */
+        transform: translateX(-50%);
+        width: 300px;
+        padding: 15px;
+        border-radius: 12px;
+        background: rgba(0, 0, 0, 0.85);
+        border: 2px solid #fff;
+        display: flex;
+        gap: 15px;
+        align-items: center;
+        z-index: 100;
+        pointer-events: none; /* Let touches pass through */
+        transition: opacity 0.3s, transform 0.3s;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      }
+
+      #event-notification.hidden {
+        opacity: 0;
+        transform: translateX(-50%) translateY(20px);
+      }
+
+      #event-icon {
+        font-size: 2.5rem;
+      }
+
+      #event-text h3 {
+        margin: 0 0 5px 0;
+        font-size: 1.2rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      #event-text p {
+        margin: 0;
+        font-size: 0.9rem;
+        line-height: 1.2;
+        color: #ddd;
+      }
+
+      /* Event Specific Styles */
+      .event-fire {
+        border-color: #ff4444 !important;
+        background: linear-gradient(
+          to right,
+          rgba(50, 0, 0, 0.9),
+          rgba(20, 0, 0, 0.9)
+        ) !important;
+      }
+      .event-fire h3 {
+        color: #ff4444;
+      }
+
+      .event-ice {
+        border-color: #00bcd4 !important;
+        background: linear-gradient(
+          to right,
+          rgba(0, 30, 50, 0.9),
+          rgba(0, 10, 20, 0.9)
+        ) !important;
+      }
+      .event-ice h3 {
+        color: #00bcd4;
+      }
+
+      .event-gravity {
+        border-color: #9c27b0 !important;
+        background: linear-gradient(
+          to right,
+          rgba(30, 0, 50, 0.9),
+          rgba(10, 0, 20, 0.9)
+        ) !important;
+      }
+      .event-gravity h3 {
+        color: #e1bee7;
+      }
+
+      /* Action Buttons Container - Just a wrapper now */
+      .action-buttons {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      }
+
+      .action-buttons > * {
+        pointer-events: auto;
+      }
+
+      /* LEFT THUMB: Ability Button */
+      #ability-btn {
+        position: absolute;
+        left: 30px; /* 50px margin from the left edge */
+        bottom: 40px; /* 40px margin from the bottom */
+
+        width: 110px;
+        height: 110px;
+        border-radius: 50%;
+        font-size: 1.5rem;
+        font-weight: bold;
+        border: 4px solid #00bcd4;
+        background: rgba(0, 188, 212, 0.2);
+        color: white;
+        cursor: pointer;
+        overflow: hidden;
+        touch-action: none;
+      }
+
+      #ability-btn:active:not(.on-cooldown) {
+        transform: scale(0.95);
+        background: rgba(0, 188, 212, 0.5);
+      }
+
+      #ability-btn.on-cooldown {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      #ability-btn.ready {
+        animation: pulse-ready 1s infinite;
+        border-color: #00ff88;
+        box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+      }
+
+      @keyframes pulse-ready {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.05);
+        }
+      }
+
+      .cooldown-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        transition: height 0.1s linear;
+        pointer-events: none;
+      }
+
+      .cooldown-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: white;
+        text-shadow: 0 0 5px black;
+      }
+
+      /* RIGHT THUMB: Shoot Button */
+      #shoot-btn {
+        position: absolute;
+        right: 130px; /* 50px margin from the right edge (SYMMETRIC with Ability) */
+        bottom: 40px; /* 40px margin from the bottom (SYMMETRIC with Ability) */
+
+        width: 110px;
+        height: 110px;
+        background: linear-gradient(135deg, #ff4500, #ff6b35);
+        color: white;
+        border-radius: 50%;
+        font-size: 1.7rem;
+        font-weight: bold;
+        border: none;
+        box-shadow: 0 4px 20px rgba(255, 69, 0, 0.5);
+        cursor: pointer;
+        touch-action: none;
+      }
+
+      #shoot-btn:active {
+        transform: scale(0.95);
+      }
+
+      .powerup-flash {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        pointer-events: none;
+        z-index: 100;
+      }
+
+      .powerup-flash.active {
+        animation: flash-effect 0.5s ease-out;
+      }
+
+      @keyframes flash-effect {
+        0% {
+          background: rgba(0, 255, 136, 0.5);
+        }
+        100% {
+          background: transparent;
+        }
+      }
+
+      @keyframes flash-fail {
+        0% {
+          background: rgba(255, 100, 100, 0.5);
+        }
+        100% {
+          background: transparent;
+        }
+      }
+
+      .powerup-flash.fail {
+        animation: flash-fail 0.5s ease-out;
+      }
+
+      #game-over {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.9);
+        z-index: 200;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+      }
+
+      #game-over h2 {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+      }
+
+      #game-over .stats {
+        font-size: 1.2rem;
+        color: #888;
+      }

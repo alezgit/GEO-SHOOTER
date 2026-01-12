@@ -77,11 +77,11 @@ app.get("/", (req, res) => {
 });
 
 app.get("/pc", (req, res) =>
-  res.sendFile(path.join(__dirname, "public", "GEOSHOOTER.html"))
+  res.sendFile(path.join(__dirname, "public", "game.html"))
 );
 
 app.get("/phone", (req, res) =>
-  res.sendFile(path.join(__dirname, "public", "controller_GEOSHOOTER.html"))
+  res.sendFile(path.join(__dirname, "public", "controller.html"))
 );
 
 app.get("/server-info", (req, res) => {

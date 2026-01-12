@@ -1,816 +1,4 @@
-<!DOCTYPE html> 
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GEO-SHOOTER - Battle Arena</title>
-    <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-        font-family: "Segoe UI", system-ui, sans-serif;
-      }
-
-      body {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: flex-start;
-        min-height: 100vh;
-        background: radial-gradient(circle at top, #1a1f3a, #050816);
-        color: #fff;
-        overflow-x: hidden;
-        padding: 10px;
-      }
-
-      @font-face {
-        font-family: "LostEntity";
-        src: url("fonts/LostEntity-8OmW2.otf") format("opentype");
-        font-weight: 400;
-        font-style: normal;
-        font-display: swap;
-      }
-
-      h1,
-      #waitingScreen h2,
-      #gameEndScreen h2,
-      #scoreboard h2,
-      #gameEndScreen .final-scores h3 {
-        font-family: "LostEntity", "Segoe UI", system-ui, sans-serif;
-        text-transform: uppercase;
-        letter-spacing: 3px;
-      }
-
-      body.start-screen #mainContainer {
-        display: none;
-      }
-
-      body.start-screen {
-        justify-content: flex-start;
-        padding-top: 70px;
-        padding-bottom: 40px;
-      }
-
-      h1 {
-        margin: 10px 0;
-        font-size: 2.5em;
-        letter-spacing: 3px;
-        color: #ff6b35;
-        text-shadow: 0 0 15px rgba(255, 69, 0, 0.9), 0 0 35px rgba(255, 69, 0, 0.6);
-        transition: opacity 0.5s, transform 0.5s;
-      }
-
-      body.start-screen h1 {
-        font-size: 7.3em;
-        margin: 0 0 28px;
-      }
-
-      #startTagline {
-        text-align: center;
-        font-size: 1.25em;
-        color: #cfcfcf;
-        letter-spacing: 1px;
-        margin-bottom: 28px;
-        text-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
-      }
-
-      #startTagline span {
-        color: #ff6b35;
-        font-weight: 400;
-      }
-
-      #startHint {
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        padding: 8px 18px;
-        margin-top: 14px;
-        border-radius: 999px;
-        border: 1px solid rgba(255, 107, 53, 0.5);
-        background: rgba(10, 14, 39, 0.6);
-        box-shadow: 0 0 20px rgba(255, 69, 0, 0.15);
-      }
-
-      #startHint::before {
-        content: "";
-        width: 10px;
-        height: 10px;
-        border-radius: 999px;
-        background: #00ff88;
-        box-shadow: 0 0 10px rgba(0, 255, 136, 0.8);
-      }
-
-      body:not(.start-screen) #startTagline {
-        display: none;
-      }
-
-      #qrBlock {
-        margin: 6px 0 24px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 12px;
-      }
-
-      #qrFrame {
-        padding: 12px;
-        border-radius: 16px;
-        background: transparent;
-        border: none;
-        box-shadow: none;
-      }
-
-      #qrCode img {
-        width: 200px;
-        height: 200px;
-        border-radius: 8px;
-        display: block;
-        box-shadow: 0 18px 35px rgba(255, 107, 53, 0.35);
-      }
-
-      #qrCaption {
-        font-size: 1.05em;
-        color: #cfcfcf;
-        text-align: center;
-        max-width: 520px;
-        line-height: 1.4;
-      }
-
-      #qrCaption strong {
-        color: #ff6b35;
-        font-weight: 400;
-      }
-
-      #qrCaption .qr-link {
-        display: block;
-        margin-top: 6px;
-        font-size: 0.85em;
-        color: rgba(255, 255, 255, 0.6);
-        word-break: break-all;
-      }
-
-      body:not(.start-screen) #qrBlock {
-        display: none;
-      }
-
-      body.start-screen:not(.start-armed) #qrBlock {
-        display: none;
-      }
-
-      #mapSelectPanel {
-        display: none;
-        width: min(520px, 92vw);
-        margin: 0 auto 22px;
-        padding: 12px 16px;
-        border-radius: 16px;
-        background: transparent;
-        border: none;
-        box-shadow: none;
-        text-align: center;
-      }
-
-      #mapSelectPanel p {
-        margin-bottom: 10px;
-        color: #cfcfcf;
-        letter-spacing: 1px;
-        text-transform: uppercase;
-        font-size: 0.9em;
-      }
-
-      body.start-screen.start-armed #mapSelectPanel {
-        display: block;
-      }
-
-      h1.hidden {
-        opacity: 0;
-        transform: translateY(-50px);
-        pointer-events: none;
-      }
-
-      #controls {
-        margin-bottom: 10px;
-        display: flex;
-        gap: 15px;
-        align-items: center;
-        background: transparent;
-        padding: 15px 25px;
-        border-radius: 0;
-        border: none;
-        box-shadow: none;
-        backdrop-filter: blur(8px);
-        flex-wrap: wrap;
-        justify-content: center;
-        font-size: 1.15em;
-      }
-
-      body.start-screen #controls {
-        margin-top: 0;
-        padding: 25px 35px;
-        width: min(1200px, 96vw);
-      }
-
-      body.start-screen #controls > div {
-        gap: 18px !important;
-      }
-
-      body.start-screen #controls > div > div {
-        gap: 20px !important;
-      }
-
-      input#room {
-        padding: 12px 18px;
-        border-radius: 12px;
-        border: 1px solid rgba(255, 107, 53, 0.55);
-        outline: none;
-        font-size: 1.05em;
-        background: linear-gradient(135deg, rgba(20, 26, 44, 0.9), rgba(10, 14, 39, 0.7));
-        color: #fff;
-        transition: all 0.3s;
-        box-shadow: inset 0 0 0 1px rgba(255, 107, 53, 0.15), 0 0 20px rgba(255, 69, 0, 0.12);
-        letter-spacing: 1px;
-      }
-
-      input#room:focus {
-        border-color: #ff6b35;
-        box-shadow: 0 0 18px rgba(255, 69, 0, 0.45), inset 0 0 0 1px rgba(255, 107, 53, 0.35);
-      }
-
-      /* Custom map selector */
-      #mapSelect {
-        display: none;
-      }
-
-      #mapSelectCustom {
-        position: relative;
-        display: inline-block;
-        min-width: 260px;
-      }
-
-      #mapSelectButton {
-        width: 100%;
-        padding: 12px 42px 12px 18px;
-        border-radius: 12px;
-        border: 1px solid rgba(255, 107, 53, 0.55);
-        outline: none;
-        font-size: 1.05em;
-        font-weight: 400;
-        background: linear-gradient(135deg, rgba(20, 26, 44, 0.9), rgba(10, 14, 39, 0.7));
-        color: #fff;
-        cursor: pointer;
-        transition: all 0.25s;
-        text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
-        font-family: "Segoe UI", system-ui, sans-serif;
-        text-transform: none;
-        box-shadow: inset 0 0 0 1px rgba(255, 107, 53, 0.15), 0 0 20px rgba(255, 69, 0, 0.12);
-        text-align: left;
-      }
-
-      #mapSelectButton:hover,
-      #mapSelectButton:focus {
-        border-color: #ff6b35;
-        box-shadow: 0 0 22px rgba(255, 69, 0, 0.35), inset 0 0 0 1px rgba(255, 107, 53, 0.3);
-        transform: translateY(-1px);
-      }
-
-      #mapSelectChevron {
-        position: absolute;
-        right: 16px;
-        top: 50%;
-        transform: translateY(-50%);
-        pointer-events: none;
-        color: rgba(255, 255, 255, 0.7);
-      }
-
-      #mapSelectList {
-        position: absolute;
-        top: calc(100% + 8px);
-        left: 0;
-        right: 0;
-        background: rgba(15, 20, 36, 0.98);
-        border: 1px solid rgba(255, 107, 53, 0.35);
-        box-shadow: 0 0 30px rgba(0, 0, 0, 0.45);
-        border-radius: 12px;
-        padding: 6px;
-        list-style: none;
-        display: none;
-        z-index: 120;
-      }
-
-      #mapSelectList.open {
-        display: block;
-      }
-
-      #mapSelectList button {
-        width: 100%;
-        background: transparent;
-        color: #fff;
-        border: none;
-        text-align: left;
-        padding: 10px 12px;
-        font-size: 1.05em;
-        font-weight: 400;
-        font-family: "Segoe UI", system-ui, sans-serif;
-        text-transform: none;
-        border-radius: 10px;
-        cursor: pointer;
-      }
-
-      #mapSelectList button:hover,
-      #mapSelectList button:focus {
-        background: rgba(255, 255, 255, 0.08);
-      }
-
-      #mapSelectButton:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-        transform: none;
-      }
-
-      select#mapSelect:disabled,
-      input#room:disabled,
-      button:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-        filter: grayscale(0.5);
-      }
-
-      button {
-        padding: 10px 20px;
-        font-size: 1.1em;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        background: linear-gradient(135deg, #ff4500, #ff6b35);
-        color: #fff;
-        font-weight: bold;
-        transition: all 0.25s;
-        box-shadow: 0 4px 15px rgba(255, 69, 0, 0.4);
-      }
-
-      button:hover {
-        transform: translateY(-2px) scale(1.02);
-        box-shadow: 0 6px 20px rgba(255, 69, 0, 0.6);
-      }
-
-      button.secondary {
-        background: linear-gradient(135deg, #2196f3, #00bcd4);
-        box-shadow: 0 4px 15px rgba(33, 150, 243, 0.4);
-      }
-
-      button.secondary:hover {
-        box-shadow: 0 6px 20px rgba(33, 150, 243, 0.6);
-      }
-
-      #audioControls {
-        display: flex;
-        gap: 12px;
-        align-items: center;
-        padding: 6px 10px;
-        border-radius: 999px;
-        background: rgba(10, 14, 39, 0.45);
-        border: 1px solid rgba(255, 107, 53, 0.35);
-        box-shadow: inset 0 0 0 1px rgba(255, 107, 53, 0.1);
-      }
-
-      #volumeSlider {
-        width: 110px;
-        accent-color: #ff6b35;
-        height: 6px;
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.08);
-      }
-
-      #muteBtn {
-        padding: 8px 12px;
-        border-radius: 999px;
-        background: rgba(255, 107, 53, 0.18);
-        box-shadow: none;
-      }
-
-      #ambientAudio {
-        position: fixed;
-        right: 16px;
-        bottom: 16px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 8px 12px;
-        border-radius: 999px;
-        background: rgba(10, 14, 39, 0.4);
-        border: 1px solid rgba(255, 107, 53, 0.25);
-        box-shadow: inset 0 0 0 1px rgba(255, 107, 53, 0.08);
-        opacity: 0.6;
-        transition: opacity 0.2s, transform 0.2s;
-        z-index: 200;
-      }
-
-      #ambientAudio:hover {
-        opacity: 0.9;
-        transform: translateY(-1px);
-      }
-
-      #ambientAudio.compact #volumeSlider {
-        width: 0;
-        opacity: 0;
-        pointer-events: none;
-      }
-
-      #ambientAudioLabel {
-        font-size: 0.9em;
-        color: rgba(255, 255, 255, 0.55);
-        letter-spacing: 1px;
-        cursor: pointer;
-      }
-
-      #status {
-        font-weight: bold; 
-        font-family: "LostEntity", "Segoe UI", system-ui, sans-serif;
-        text-transform: uppercase;
-        font-size: 1.9em;
-        text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-        text-align: center;
-        width: 100%;
-      }
-
-      body.start-screen #status {
-        margin-top: 18px;
-      }
-
-      #mainContainer {
-        display: flex;
-        gap: 20px;
-        align-items: flex-start;
-        flex-wrap: wrap;
-        justify-content: center;
-        transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-      }
-
-      #mainContainer.fullscreen-mode {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        margin: 0;
-        padding: 0;
-        flex-wrap: nowrap;
-        flex-direction: column;
-        align-items: center;
-        gap: 10px;
-        padding: 10px;
-        z-index: 100;
-      }
-
-      #gameContainer {
-        position: relative;
-        transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-      }
-
-      #mainContainer.fullscreen-mode #gameContainer {
-        flex: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-
-      #mainContainer.fullscreen-mode #gameContainer canvas {
-        width: 100% !important;
-        height: 100% !important;
-        max-width: 100vw;
-        max-height: calc(100vh - 230px);
-        object-fit: contain;
-      }
-
-      canvas {
-        background: linear-gradient(180deg, #0a0e1a, #1a1f2e);
-        border-radius: 15px;
-        box-shadow: 0 0 50px rgba(255, 69, 0, 0.4), inset 0 0 50px rgba(0, 0, 0, 0.5);
-        display: block;
-        border: 2px solid rgba(255, 69, 0, 0.4);
-      }
-
-      #scoreboard {
-        background: rgba(10, 14, 39, 0.9);
-        border-radius: 14px;
-        border: 2px solid rgba(255, 69, 0, 0.6);
-        box-shadow: 0 0 30px rgba(255, 69, 0, 0.3);
-        padding: 20px;
-        min-width: 280px;
-        backdrop-filter: blur(8px);
-        transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-        display: none;
-      }
-
-      #mainContainer.fullscreen-mode #scoreboard {
-        display: block;
-        position: static;
-        width: 100%;
-        max-width: 960px;
-        height: auto;
-        max-height: 200px;
-        overflow-y: auto;
-        padding: 15px 20px;
-      }
-
-      #mainContainer.fullscreen-mode #scoreList {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        justify-content: center;
-      }
-
-      #mainContainer.fullscreen-mode #scoreList li {
-        flex: 0 1 auto;
-        min-width: 180px;
-        max-width: 220px;
-      }
-
-      #scoreboard h2 {
-        color: #ff6b35;
-        font-family: "LostEntity", "Segoe UI", system-ui, sans-serif;
-        text-transform: uppercase;
-        font-size: 1.4em;
-        margin-bottom: 10px;
-        text-shadow: 0 0 10px rgba(255, 69, 0, 0.6);
-        text-align: center;
-        letter-spacing: 2px;
-      }
-
-      #mapName {
-        color: #888;
-        font-size: 0.9em;
-        text-align: center;
-        margin-bottom: 15px;
-        display: none;
-      }
-
-      #scoreList {
-        list-style: none;
-      }
-
-      #scoreList li {
-        padding: 4px 2px;
-        margin: 3px 0;
-        border-radius: 0;
-        background: transparent;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 0.95em;
-        font-family: "LostEntity", "Segoe UI", system-ui, sans-serif;
-        text-transform: uppercase;
-      }
-
-      .life-dot {
-        display: inline-block;
-        width: 14px;
-        height: 14px;
-        border-radius: 999px;
-        background: currentColor;
-        margin-left: 8px;
-      }
-
-      #scoreList li.eliminated {
-        opacity: 0.5;
-        text-decoration: line-through;
-      }
-
-      .player-name {
-        font-weight: bold;
-      }
-
-      .player-stats {
-        font-size: 1.6em;
-        letter-spacing: 6px;
-      }
-
-      .player-lives {
-        color: #ff4444;
-      }
-
-      #waitingScreen {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        text-align: center;
-        background: rgba(10, 14, 39, 0.95);
-        padding: 40px 60px;
-        border-radius: 22px;
-        border: 2px solid rgba(255, 69, 0, 0.6);
-        box-shadow: 0 0 40px rgba(255, 69, 0, 0.6);
-        backdrop-filter: blur(8px);
-      }
-
-      #waitingScreen h2 {
-        font-size: 2em;
-        margin-bottom: 20px;
-        color: #ff6b35;
-        text-shadow: 0 0 15px rgba(255, 69, 0, 0.8);
-      }
-
-      #waitingScreen p {
-        font-size: 1.2em;
-        margin: 10px 0;
-        color: #cfcfcf;
-      }
-
-      #gameEndScreen {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(5, 8, 22, 0.95);
-        display: none;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        border-radius: 15px;
-        z-index: 10;
-      }
-
-      #gameEndScreen.visible {
-        display: flex;
-      }
-
-      #gameEndScreen h2 {
-        font-family: "LostEntity", "Segoe UI", system-ui, sans-serif;
-        text-transform: uppercase;
-        font-size: 3em;
-        margin-bottom: 10px;
-        text-shadow: 0 0 30px currentColor;
-      }
-
-      #gameEndScreen .winner-name {
-        font-family: "LostEntity", "Segoe UI", system-ui, sans-serif;
-        text-transform: uppercase;
-        font-size: 2.5em;
-        margin: 10px 0;
-        font-weight: bold;
-      }
-
-      #gameEndScreen .stats {
-        font-family: "LostEntity", "Segoe UI", system-ui, sans-serif;
-        text-transform: uppercase;
-        font-size: 1.5em;
-        color: #FFD700;
-        margin: 10px 0;
-      }
-
-      #gameEndScreen .final-scores {
-        background: rgba(255, 255, 255, 0.1);
-        padding: 20px 40px;
-        border-radius: 14px;
-        margin: 20px 0;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-      }
-
-      #gameEndScreen .final-scores h3 {
-        font-family: "LostEntity", "Segoe UI", system-ui, sans-serif;
-        text-transform: uppercase;
-        color: #fff;
-        margin-bottom: 15px;
-        font-size: 1.3em;
-      }
-
-      #gameEndScreen .score-row {
-        display: flex;
-        justify-content: space-between;
-        gap: 30px;
-        padding: 8px 0;
-        font-size: 1.1em;
-      }
-
-      #restartBtn {
-        margin-top: 25px;
-        padding: 15px 40px;
-        font-family: "LostEntity", "Segoe UI", system-ui, sans-serif;
-        text-transform: uppercase;
-        font-size: 1.3em;
-        animation: pulse 2s infinite;
-      }
-
-      @keyframes pulse {
-        0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.05); }
-      }
-
-      .divider {
-        width: 80%;
-        height: 1px;
-        background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.4), transparent);
-        margin: 15px 0;
-      }
-
-      @media (max-width: 1400px) {
-        #mainContainer {
-          flex-direction: column;
-          align-items: center;
-        }
-
-        #scoreboard {
-          width: 100%;
-          max-width: 600px;
-        }
-
-        #scoreList {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 10px;
-        }
-
-        #scoreList li {
-          flex: 1;
-          min-width: 200px;
-        }
-      }
-    </style>
-  </head>
-  <body class="start-screen">
-    <h1 id="mainTitle">GEO-SHOOTER</h1>
-    <div id="mapSelectPanel">
-      <p>Choose Your Arena</p>
-      <div id="mapSelectCustom">
-        <button id="mapSelectButton" type="button" aria-haspopup="listbox" aria-expanded="false">
-          <span id="mapSelectLabel">Select map</span>
-      <span id="mapSelectChevron">v</span>
-        </button>
-        <ul id="mapSelectList" role="listbox" aria-label="Map selection"></ul>
-      </div>
-      <select id="mapSelect" aria-hidden="true" tabindex="-1">
-        <option value="training">Training Ground</option>
-        <option value="arena">Classic Arena</option>
-        <option value="urban">Urban Warfare</option>
-        <option value="crossfire">Crossfire</option>
-        <option value="thepit">The Pit</option>
-        <option value="deathzone">Death Zone</option>
-      </select>
-    </div>
-    <div id="qrBlock">
-      <div id="qrFrame">
-        <div id="qrCode" aria-label="Controller QR code"></div>
-      </div>
-      <div id="qrCaption">
-         <strong>PC and phone must share the same Wi-Fi</strong>
-         <span class="qr-link" id="qrLink"></span>
-      </div>
-    </div>
-
-    <div id="controls">
-      <div style="display: flex; flex-direction: column; gap: 10px; align-items: center; width: 100%;">
-        <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap; justify-content: center;">
-          <input id="room" placeholder="Enter Room ID" value="war123" />
-          <button id="connectBtn">Create the arena</button>
-        </div>
-        <div style="display: flex; gap: 10px; align-items: center;">
-          <span id="status">Not connected</span>
-        </div>
-      </div>
-    </div>
-
-    <div id="ambientAudio" class="compact">
-      <button id="muteBtn">SOUND</button>
-      <input type="range" id="volumeSlider" min="0" max="100" value="70" />
-      <span id="ambientAudioLabel">AUDIO</span>
-    </div>
-
-    <div id="mainContainer">
-      <div id="gameContainer">
-        <canvas id="gameCanvas" width="1100" height="650"></canvas>
-        
-        <div id="waitingScreen">
-          <h2>Waiting for players...</h2>
-          <p id="playerCount">0 players connected</p>
-          <p id="readyStatus">Waiting for character selection</p>
-          <div class="divider" style="width: 80%; height: 1px; background: linear-gradient(to right, transparent, rgba(255, 107, 53, 0.4), transparent); margin: 20px auto;"></div>
-        </div>
-
-        <div id="gameEndScreen">
-      <div id="trophyIcon" style="font-size: 4em;"></div>
-          <h2 id="endTitle">WINNER!</h2>
-          <div id="winnerName" class="winner-name"></div>
-          <div id="winnerStats" class="stats"></div>
-          <div class="divider"></div>
-          <div class="final-scores">
-            <h3>FINAL SCORES</h3>
-            <div id="finalScoreList"></div>
-          </div>
-          <button id="restartBtn">PLAY AGAIN</button>
-        </div>
-      </div>
-
-      <div id="scoreboard">
-        <h2> SCOREBOARD</h2>
-        <div id="mapName">Map: Training Ground</div>
-        <ul id="scoreList"></ul>
-      </div>
-    </div>
-
-    <script src="vendor/qrcode.min.js"></script>
-    <script>
-      // ============ AUDIO SYSTEM ============
+  // ============ AUDIO SYSTEM ============
       class AudioManager {
         constructor() {
           this.sounds = {};
@@ -1582,48 +770,15 @@
         }, 6000);
       }
 
-      function spawnHealingPad() {
-        if (gameState !== "playing") return;
-        if (!mapAllowsHealingPads()) return;
-        if (camps.length > 0) return;
-        
-        const colors = ["#1565C0", "#C62828", "#2E7D32", "#F57C00"];
-        const randomColor = colors[Math.floor(Math.random() * colors.length)];
-        
-        let x, y, attempts = 0;
-        do {
-          x = 100 + Math.random() * (canvas.width - 280);
-          y = 100 + Math.random() * (canvas.height - 280);
-          attempts++;
-        } while (attempts < 50 && isColliding(x + 40, y + 40, 40));
-        
-        camps.push({
-          x, y, w: 80, h: 80,
-          color: randomColor,
-          spawnTime: Date.now(),
-          duration: 12000
-        });
-        
-        audioManager.play('powerup', { volume: 0.3 });
-      }
+     // --- HEALING PADS DISABLED ---
+function spawnHealingPad() {
+  return;
+}
 
-      function startHealingPadSpawning() {
-        if (!mapAllowsHealingPads()) return;
-        const scheduleNextPad = () => {
-          if (gameState !== "playing") return;
-          if (!mapAllowsHealingPads()) return;
-          const delay = 10000 + Math.random() * 5000;
-          setTimeout(() => {
-            spawnHealingPad();
-            scheduleNextPad();
-          }, delay);
-        };
-        
-        setTimeout(() => {
-          spawnHealingPad();
-          scheduleNextPad();
-        }, 8000);
-      }
+function startHealingPadSpawning() {
+  return;
+}
+// -----------------------------
 
       function startArenaEvents() {
         const scheduleNextEvent = () => {
@@ -2402,7 +1557,7 @@
                 const closestY = Math.max(obs.y, Math.min(player.y, obs.y + obs.h));
                 const dx = player.x - closestX;
                 const dy = player.y - closestY;
-                if (Math.sqrt(dx * dx + dy * dy) < player.r + 15) { touchingWall = true; break; }
+                if (Math.sqrt(dx * dx + dy * dy) < player.r + 10) { touchingWall = true; break; }
               }
               
               if (touchingWall && !player.onFire) {
@@ -2438,13 +1593,6 @@
           }
 
           if (player.onFire) player.health -= player.onFire.damage / 60;
-
-          // Healing camps
-          camps = camps.filter(camp => {
-            if (Date.now() - camp.spawnTime > camp.duration) return false;
-            if (isInZone(player, camp)) player.health = Math.min(player.maxHealth, player.health + 0.5);
-            return true;
-          });
 
           // Special zones
           specialZones.forEach(zone => {
@@ -2620,20 +1768,6 @@
           ctx.fillText(icon, zone.x + zone.w/2, zone.y + zone.h/2);
         });
 
-        // Healing camps
-        camps.forEach(camp => {
-          ctx.fillStyle = camp.color + "40";
-          ctx.fillRect(camp.x, camp.y, camp.w, camp.h);
-          ctx.strokeStyle = camp.color;
-          ctx.lineWidth = 3;
-          ctx.strokeRect(camp.x, camp.y, camp.w, camp.h);
-          ctx.fillStyle = camp.color;
-          ctx.font = "bold 30px 'Segoe UI'";
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-          ctx.fillText("+", camp.x + camp.w / 2, camp.y + camp.h / 2);
-        });
-
         // Static obstacles
         obstacles.forEach(obs => {
           ctx.fillStyle = obs.color;
@@ -2776,14 +1910,66 @@
             }
           }
           
-          if (currentEvent.type === 'BLIZZARD') {
-            for (let i = 0; i < 100; i++) {
-              const x = ((Date.now() / 20) * 3 + i * 30) % (canvas.width + 100) - 100;
-              const y = (i * 17) % canvas.height;
-              ctx.fillStyle = currentEvent.particleColor;
-              ctx.fillRect(x, y, 3, 8);
-            }
-          }
+          // NEW CODE
+if (currentEvent.type === 'BLIZZARD') {
+  // 1. Initialize particles array if needed
+  if (!currentEvent.particles) currentEvent.particles = [];
+
+  // 2. Spawn new particles (up to limit)
+  // We spawn them from all 4 sides randomly
+  if (currentEvent.particles.length < 150) {
+    const side = Math.floor(Math.random() * 4); // 0:Top, 1:Right, 2:Bottom, 3:Left
+    let p = { x: 0, y: 0, vx: 0, vy: 0, life: 100 + Math.random() * 50 };
+    const speed = 2 + Math.random() * 3;
+
+    // Pick start position based on side
+    switch(side) {
+        case 0: // Top
+            p.x = Math.random() * canvas.width; 
+            p.y = -10; 
+            break;
+        case 1: // Right
+            p.x = canvas.width + 10; 
+            p.y = Math.random() * canvas.height; 
+            break;
+        case 2: // Bottom
+            p.x = Math.random() * canvas.width; 
+            p.y = canvas.height + 10; 
+            break;
+        case 3: // Left
+            p.x = -10; 
+            p.y = Math.random() * canvas.height; 
+            break;
+    }
+
+    // Calculate velocity towards center (Battle Arena feel)
+    const angle = Math.atan2((canvas.height/2) - p.y, (canvas.width/2) - p.x);
+    // Add some randomness to angle so they don't all meet perfectly in the middle
+    p.vx = Math.cos(angle + (Math.random() - 0.5)) * speed;
+    p.vy = Math.sin(angle + (Math.random() - 0.5)) * speed;
+
+    currentEvent.particles.push(p);
+  }
+
+  // 3. Update and Draw
+  ctx.fillStyle = currentEvent.particleColor;
+  for (let i = currentEvent.particles.length - 1; i >= 0; i--) {
+    let p = currentEvent.particles[i];
+    
+    // Move
+    p.x += p.vx;
+    p.y += p.vy;
+    p.life--;
+
+    // Draw
+    ctx.globalAlpha = Math.max(0, p.life / 50); // Fade out
+    ctx.fillRect(p.x, p.y, 3, 3);
+    ctx.globalAlpha = 1.0;
+
+    // Remove dead particles
+    if (p.life <= 0) currentEvent.particles.splice(i, 1);
+  }
+}
           
           if (currentEvent.type === 'GRAVITY_CHAOS') {
             ctx.strokeStyle = currentEvent.gridColor;
@@ -2981,6 +2167,3 @@
       }
 
       loop();
-    </script>
-  </body>
-</html>
