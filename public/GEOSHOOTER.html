@@ -24,6 +24,34 @@
         padding: 10px;
       }
 
+      @font-face {
+        font-family: "LostEntity";
+        src: url("fonts/LostEntity-8OmW2.otf") format("opentype");
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      h1,
+      #waitingScreen h2,
+      #gameEndScreen h2,
+      #scoreboard h2,
+      #gameEndScreen .final-scores h3 {
+        font-family: "LostEntity", "Segoe UI", system-ui, sans-serif;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+      }
+
+      body.start-screen #mainContainer {
+        display: none;
+      }
+
+      body.start-screen {
+        justify-content: flex-start;
+        padding-top: 70px;
+        padding-bottom: 40px;
+      }
+
       h1 {
         margin: 10px 0;
         font-size: 2.5em;
@@ -31,6 +59,119 @@
         color: #ff6b35;
         text-shadow: 0 0 15px rgba(255, 69, 0, 0.9), 0 0 35px rgba(255, 69, 0, 0.6);
         transition: opacity 0.5s, transform 0.5s;
+      }
+
+      body.start-screen h1 {
+        font-size: 7.3em;
+        margin: 0 0 28px;
+      }
+
+      #startTagline {
+        text-align: center;
+        font-size: 1.25em;
+        color: #cfcfcf;
+        letter-spacing: 1px;
+        margin-bottom: 28px;
+        text-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
+      }
+
+      #startTagline span {
+        color: #ff6b35;
+        font-weight: 400;
+      }
+
+      #startHint {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 18px;
+        margin-top: 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 107, 53, 0.5);
+        background: rgba(10, 14, 39, 0.6);
+        box-shadow: 0 0 20px rgba(255, 69, 0, 0.15);
+      }
+
+      #startHint::before {
+        content: "";
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background: #00ff88;
+        box-shadow: 0 0 10px rgba(0, 255, 136, 0.8);
+      }
+
+      body:not(.start-screen) #startTagline {
+        display: none;
+      }
+
+      #qrBlock {
+        margin: 6px 0 24px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+      }
+
+      #qrFrame {
+        padding: 12px;
+        border-radius: 16px;
+        background: transparent;
+        border: none;
+        box-shadow: none;
+      }
+
+      #qrCode {
+        width: 200px;
+        height: 200px;
+        border-radius: 8px;
+        display: block;
+        box-shadow: 0 18px 35px rgba(255, 107, 53, 0.35);
+      }
+
+      #qrCaption {
+        font-size: 1.05em;
+        color: #cfcfcf;
+        text-align: center;
+        max-width: 520px;
+        line-height: 1.4;
+      }
+
+      #qrCaption strong {
+        color: #ff6b35;
+        font-weight: 400;
+      }
+
+      body:not(.start-screen) #qrBlock {
+        display: none;
+      }
+
+      body.start-screen:not(.start-armed) #qrBlock {
+        display: none;
+      }
+
+      #mapSelectPanel {
+        display: none;
+        width: min(520px, 92vw);
+        margin: 0 auto 22px;
+        padding: 12px 16px;
+        border-radius: 16px;
+        background: transparent;
+        border: none;
+        box-shadow: none;
+        text-align: center;
+      }
+
+      #mapSelectPanel p {
+        margin-bottom: 10px;
+        color: #cfcfcf;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        font-size: 0.9em;
+      }
+
+      body.start-screen.start-armed #mapSelectPanel {
+        display: block;
       }
 
       h1.hidden {
@@ -44,65 +185,138 @@
         display: flex;
         gap: 15px;
         align-items: center;
-        background: rgba(10, 14, 39, 0.85);
+        background: transparent;
         padding: 15px 25px;
-        border-radius: 14px;
-        border: 2px solid rgba(255, 69, 0, 0.6);
-        box-shadow: 0 0 30px rgba(255, 69, 0, 0.3);
+        border-radius: 0;
+        border: none;
+        box-shadow: none;
         backdrop-filter: blur(8px);
         flex-wrap: wrap;
         justify-content: center;
+        font-size: 1.15em;
+      }
+
+      body.start-screen #controls {
+        margin-top: 0;
+        padding: 25px 35px;
+        width: min(1200px, 96vw);
+      }
+
+      body.start-screen #controls > div {
+        gap: 18px !important;
+      }
+
+      body.start-screen #controls > div > div {
+        gap: 20px !important;
       }
 
       input#room {
-        padding: 10px 15px;
-        border-radius: 8px;
-        border: 2px solid #ff4500;
+        padding: 12px 18px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 107, 53, 0.55);
         outline: none;
-        font-size: 1em;
-        background: rgba(255, 255, 255, 0.1);
+        font-size: 1.05em;
+        background: linear-gradient(135deg, rgba(20, 26, 44, 0.9), rgba(10, 14, 39, 0.7));
         color: #fff;
         transition: all 0.3s;
+        box-shadow: inset 0 0 0 1px rgba(255, 107, 53, 0.15), 0 0 20px rgba(255, 69, 0, 0.12);
+        letter-spacing: 1px;
       }
 
       input#room:focus {
         border-color: #ff6b35;
-        box-shadow: 0 0 15px rgba(255, 69, 0, 0.5);
+        box-shadow: 0 0 18px rgba(255, 69, 0, 0.45), inset 0 0 0 1px rgba(255, 107, 53, 0.35);
       }
 
-      /* Stylized map selector */
-      select#mapSelect {
-        padding: 12px 20px;
-        border-radius: 10px;
-        border: 2px solid #ff4500;
+      /* Custom map selector */
+      #mapSelect {
+        display: none;
+      }
+
+      #mapSelectCustom {
+        position: relative;
+        display: inline-block;
+        min-width: 260px;
+      }
+
+      #mapSelectButton {
+        width: 100%;
+        padding: 12px 42px 12px 18px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 107, 53, 0.55);
         outline: none;
-        font-size: 1.1em;
-        font-weight: bold;
-        background: rgba(255, 69, 0, 0.15);
+        font-size: 1.05em;
+        font-weight: 400;
+        background: linear-gradient(135deg, rgba(20, 26, 44, 0.9), rgba(10, 14, 39, 0.7));
         color: #fff;
         cursor: pointer;
-        transition: all 0.3s;
-        text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
-        min-width: 220px;
+        transition: all 0.25s;
+        text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+        font-family: "Segoe UI", system-ui, sans-serif;
+        text-transform: none;
+        box-shadow: inset 0 0 0 1px rgba(255, 107, 53, 0.15), 0 0 20px rgba(255, 69, 0, 0.12);
+        text-align: left;
       }
 
-      select#mapSelect:hover {
-        background: rgba(255, 69, 0, 0.25);
+      #mapSelectButton:hover,
+      #mapSelectButton:focus {
         border-color: #ff6b35;
-        box-shadow: 0 0 20px rgba(255, 69, 0, 0.5);
-        transform: scale(1.02);
+        box-shadow: 0 0 22px rgba(255, 69, 0, 0.35), inset 0 0 0 1px rgba(255, 107, 53, 0.3);
+        transform: translateY(-1px);
       }
 
-      select#mapSelect:focus {
-        border-color: #00ff88;
-        box-shadow: 0 0 25px rgba(0, 255, 136, 0.6);
+      #mapSelectChevron {
+        position: absolute;
+        right: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
+        color: rgba(255, 255, 255, 0.7);
       }
 
-      select#mapSelect option {
-        background: #1a1f3a;
+      #mapSelectList {
+        position: absolute;
+        top: calc(100% + 8px);
+        left: 0;
+        right: 0;
+        background: rgba(15, 20, 36, 0.98);
+        border: 1px solid rgba(255, 107, 53, 0.35);
+        box-shadow: 0 0 30px rgba(0, 0, 0, 0.45);
+        border-radius: 12px;
+        padding: 6px;
+        list-style: none;
+        display: none;
+        z-index: 120;
+      }
+
+      #mapSelectList.open {
+        display: block;
+      }
+
+      #mapSelectList button {
+        width: 100%;
+        background: transparent;
         color: #fff;
-        padding: 10px;
-        font-size: 1em;
+        border: none;
+        text-align: left;
+        padding: 10px 12px;
+        font-size: 1.05em;
+        font-weight: 400;
+        font-family: "Segoe UI", system-ui, sans-serif;
+        text-transform: none;
+        border-radius: 10px;
+        cursor: pointer;
+      }
+
+      #mapSelectList button:hover,
+      #mapSelectList button:focus {
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      #mapSelectButton:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
       }
 
       select#mapSelect:disabled,
@@ -115,7 +329,7 @@
 
       button {
         padding: 10px 20px;
-        font-size: 1em;
+        font-size: 1.1em;
         border: none;
         border-radius: 8px;
         cursor: pointer;
@@ -142,19 +356,77 @@
 
       #audioControls {
         display: flex;
-        gap: 10px;
+        gap: 12px;
         align-items: center;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(10, 14, 39, 0.45);
+        border: 1px solid rgba(255, 107, 53, 0.35);
+        box-shadow: inset 0 0 0 1px rgba(255, 107, 53, 0.1);
       }
 
       #volumeSlider {
-        width: 80px;
-        accent-color: #ff4500;
+        width: 110px;
+        accent-color: #ff6b35;
+        height: 6px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      #muteBtn {
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(255, 107, 53, 0.18);
+        box-shadow: none;
+      }
+
+      #ambientAudio {
+        position: fixed;
+        right: 16px;
+        bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(10, 14, 39, 0.4);
+        border: 1px solid rgba(255, 107, 53, 0.25);
+        box-shadow: inset 0 0 0 1px rgba(255, 107, 53, 0.08);
+        opacity: 0.6;
+        transition: opacity 0.2s, transform 0.2s;
+        z-index: 200;
+      }
+
+      #ambientAudio:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+      }
+
+      #ambientAudio.compact #volumeSlider {
+        width: 0;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      #ambientAudioLabel {
+        font-size: 0.9em;
+        color: rgba(255, 255, 255, 0.55);
+        letter-spacing: 1px;
+        cursor: pointer;
       }
 
       #status {
-        font-weight: bold;
-        font-size: 1.1em;
+        font-weight: bold; 
+        font-family: "LostEntity", "Segoe UI", system-ui, sans-serif;
+        text-transform: uppercase;
+        font-size: 1.9em;
         text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        text-align: center;
+        width: 100%;
+      }
+
+      body.start-screen #status {
+        margin-top: 18px;
       }
 
       #mainContainer {
@@ -219,9 +491,11 @@
         min-width: 280px;
         backdrop-filter: blur(8px);
         transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        display: none;
       }
 
       #mainContainer.fullscreen-mode #scoreboard {
+        display: block;
         position: static;
         width: 100%;
         max-width: 960px;
@@ -246,6 +520,8 @@
 
       #scoreboard h2 {
         color: #ff6b35;
+        font-family: "LostEntity", "Segoe UI", system-ui, sans-serif;
+        text-transform: uppercase;
         font-size: 1.4em;
         margin-bottom: 10px;
         text-shadow: 0 0 10px rgba(255, 69, 0, 0.6);
@@ -258,6 +534,7 @@
         font-size: 0.9em;
         text-align: center;
         margin-bottom: 15px;
+        display: none;
       }
 
       #scoreList {
@@ -265,19 +542,25 @@
       }
 
       #scoreList li {
-        padding: 8px 12px;
-        margin: 5px 0;
-        border-radius: 8px;
-        background: rgba(255, 255, 255, 0.05);
+        padding: 4px 2px;
+        margin: 3px 0;
+        border-radius: 0;
+        background: transparent;
         display: flex;
         justify-content: space-between;
         align-items: center;
         font-size: 0.95em;
-        transition: all 0.3s;
+        font-family: "LostEntity", "Segoe UI", system-ui, sans-serif;
+        text-transform: uppercase;
       }
 
-      #scoreList li:hover {
-        background: rgba(255, 255, 255, 0.1);
+      .life-dot {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        border-radius: 999px;
+        background: currentColor;
+        margin-left: 8px;
       }
 
       #scoreList li.eliminated {
@@ -290,7 +573,8 @@
       }
 
       .player-stats {
-        color: #FFD700;
+        font-size: 1.6em;
+        letter-spacing: 6px;
       }
 
       .player-lives {
@@ -344,18 +628,24 @@
       }
 
       #gameEndScreen h2 {
+        font-family: "LostEntity", "Segoe UI", system-ui, sans-serif;
+        text-transform: uppercase;
         font-size: 3em;
         margin-bottom: 10px;
         text-shadow: 0 0 30px currentColor;
       }
 
       #gameEndScreen .winner-name {
+        font-family: "LostEntity", "Segoe UI", system-ui, sans-serif;
+        text-transform: uppercase;
         font-size: 2.5em;
         margin: 10px 0;
         font-weight: bold;
       }
 
       #gameEndScreen .stats {
+        font-family: "LostEntity", "Segoe UI", system-ui, sans-serif;
+        text-transform: uppercase;
         font-size: 1.5em;
         color: #FFD700;
         margin: 10px 0;
@@ -370,6 +660,8 @@
       }
 
       #gameEndScreen .final-scores h3 {
+        font-family: "LostEntity", "Segoe UI", system-ui, sans-serif;
+        text-transform: uppercase;
         color: #fff;
         margin-bottom: 15px;
         font-size: 1.3em;
@@ -386,6 +678,8 @@
       #restartBtn {
         margin-top: 25px;
         padding: 15px 40px;
+        font-family: "LostEntity", "Segoe UI", system-ui, sans-serif;
+        text-transform: uppercase;
         font-size: 1.3em;
         animation: pulse 2s infinite;
       }
@@ -426,32 +720,51 @@
       }
     </style>
   </head>
-  <body>
-    <h1 id="mainTitle">🔫 GEO-SHOOTER</h1>
+  <body class="start-screen">
+    <h1 id="mainTitle">GEO-SHOOTER</h1>
+    <div id="mapSelectPanel">
+      <p>Choose Your Arena</p>
+      <div id="mapSelectCustom">
+        <button id="mapSelectButton" type="button" aria-haspopup="listbox" aria-expanded="false">
+          <span id="mapSelectLabel">Select map</span>
+      <span id="mapSelectChevron">v</span>
+        </button>
+        <ul id="mapSelectList" role="listbox" aria-label="Map selection"></ul>
+      </div>
+      <select id="mapSelect" aria-hidden="true" tabindex="-1">
+        <option value="training">Training Ground</option>
+        <option value="arena">Classic Arena</option>
+        <option value="urban">Urban Warfare</option>
+        <option value="crossfire">Crossfire</option>
+        <option value="thepit">The Pit</option>
+        <option value="deathzone">Death Zone</option>
+      </select>
+    </div>
+    <div id="qrBlock">
+      <div id="qrFrame">
+        <img id="qrCode" alt="Controller QR code" />
+      </div>
+      <div id="qrCaption">
+         <strong>PC and phone must share the same Wi-Fi</strong> 
+      </div>
+    </div>
 
     <div id="controls">
       <div style="display: flex; flex-direction: column; gap: 10px; align-items: center; width: 100%;">
         <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap; justify-content: center;">
           <input id="room" placeholder="Enter Room ID" value="war123" />
-          <select id="mapSelect">
-            <option value="training">🎯 Training Ground</option>
-            <option value="arena">🏟️ Classic Arena</option>
-            <option value="urban">🏙️ Urban Warfare</option>
-            <option value="crossfire">⚔️ Crossfire</option>
-            <option value="thepit">⭕ The Pit</option>
-            <option value="deathzone">💀 Death Zone</option>
-          </select>
-          <button id="connectBtn">Connect</button>
-          <div id="audioControls">
-            <button id="muteBtn">🔊</button>
-            <input type="range" id="volumeSlider" min="0" max="100" value="70" />
-          </div>
+          <button id="connectBtn">Create the arena</button>
         </div>
         <div style="display: flex; gap: 10px; align-items: center;">
           <span id="status">Not connected</span>
-          <span id="mapInfo" style="color: #ff6b35; font-weight: bold;"></span>
         </div>
       </div>
+    </div>
+
+    <div id="ambientAudio" class="compact">
+      <button id="muteBtn">SOUND</button>
+      <input type="range" id="volumeSlider" min="0" max="100" value="70" />
+      <span id="ambientAudioLabel">AUDIO</span>
     </div>
 
     <div id="mainContainer">
@@ -459,16 +772,14 @@
         <canvas id="gameCanvas" width="1100" height="650"></canvas>
         
         <div id="waitingScreen">
-          <h2>⏳ Waiting for players...</h2>
+          <h2>Waiting for players...</h2>
           <p id="playerCount">0 players connected</p>
           <p id="readyStatus">Waiting for character selection</p>
           <div class="divider" style="width: 80%; height: 1px; background: linear-gradient(to right, transparent, rgba(255, 107, 53, 0.4), transparent); margin: 20px auto;"></div>
-          <p style="color: #888; font-size: 0.9em; margin-bottom: 5px;">Selected Map:</p>
-          <p id="mapInfo" style="color: #ff6b35; font-size: 1.3em; font-weight: bold; margin-top: 5px;">🎯 Training Ground</p>
         </div>
 
         <div id="gameEndScreen">
-          <div id="trophyIcon" style="font-size: 4em;">🏆</div>
+      <div id="trophyIcon" style="font-size: 4em;"></div>
           <h2 id="endTitle">WINNER!</h2>
           <div id="winnerName" class="winner-name"></div>
           <div id="winnerStats" class="stats"></div>
@@ -477,12 +788,12 @@
             <h3>FINAL SCORES</h3>
             <div id="finalScoreList"></div>
           </div>
-          <button id="restartBtn">🔄 PLAY AGAIN</button>
+          <button id="restartBtn">PLAY AGAIN</button>
         </div>
       </div>
 
       <div id="scoreboard">
-        <h2>📊 SCOREBOARD</h2>
+        <h2> SCOREBOARD</h2>
         <div id="mapName">Map: Training Ground</div>
         <ul id="scoreList"></ul>
       </div>
@@ -527,7 +838,7 @@
           }
 
           this.soundsLoaded = true;
-          console.log('🔊 Audio system initialized');
+          console.log('Audio system initialized');
         }
 
         play(soundName, options = {}) {
@@ -589,7 +900,7 @@
 
       document.getElementById('muteBtn').onclick = () => {
         const isMuted = audioManager.toggleMute();
-        document.getElementById('muteBtn').textContent = isMuted ? '🔇' : '🔊';
+        document.getElementById('muteBtn').textContent = isMuted ? 'MUTED' : 'SOUND';
       };
 
       document.getElementById('volumeSlider').oninput = (e) => {
@@ -620,45 +931,60 @@
       let powerUps = [];
       let currentMap = "training";
       let gameLoopId = null;
+      let pendingGameStart = null;
 
       const MAX_LIVES = 3;
-      const SPAWN_POINTS = [
+      const PLAYER_COLORS = [
+        "#ff3b30",
+        "#0a84ff",
+        "#34c759",
+        "#ff9f0a",
+        "#bf5af2",
+        "#64d2ff",
+        "#ffd60a",
+        "#ff375f",
+        "#30d158",
+        "#5e5ce6",
+        "#64d2ff",
+        "#ffcc00"
+      ];
+      const getSpawnPoints = () => ([
         { x: 100, y: 100 },
         { x: canvas.width - 100, y: 100 },
         { x: 100, y: canvas.height - 100 },
         { x: canvas.width - 100, y: canvas.height - 100 }
-      ];
+      ]);
 
       const CHARACTERS = {
         TANK: {
           name: "Tank",
           color: "#4CAF50",
-          stats: { speed: 2, health: 150, damage: 35, fireRate: 1.5, bulletSpeed: 8 },
-          ability: { name: "Shield", icon: "🛡️", cooldown: 12000, duration: 3000, effect: "shield" }
+          stats: { speed: 3, health: 150, damage: 35, fireRate: 1, bulletSpeed: 8 },
+          ability: { name: "Shield", icon: "", cooldown: 20000, duration: 3000, effect: "shield" }
         },
         SNIPER: {
           name: "Sniper",
           color: "#2196F3",
-          stats: { speed: 4, health: 80, damage: 60, fireRate: 2.5, bulletSpeed: 15 },
-          ability: { name: "Piercing Shot", icon: "🎯", cooldown: 10000, duration: 0, effect: "pierce" }
+          stats: { speed: 5, health: 80, damage: 60, fireRate: 1.6, bulletSpeed: 15 },
+          ability: { name: "Piercing Shot", icon: "", cooldown: 12000, duration: 0, effect: "pierce" }
         },
         RUNNER: {
           name: "Runner",
           color: "#FFC107",
           stats: { speed: 7, health: 70, damage: 15, fireRate: 0.3, bulletSpeed: 10 },
-          ability: { name: "Dash", icon: "💨", cooldown: 6000, duration: 300, effect: "dash" }
+          ability: { name: "Dash", icon: "", cooldown: 8000, duration: 300, effect: "dash" }
         },
         BALANCED: {
           name: "Balanced",
           color: "#9C27B0",
-          stats: { speed: 4.5, health: 100, damage: 25, fireRate: 0.8, bulletSpeed: 10 },
-          ability: { name: "Heal Burst", icon: "💚", cooldown: 15000, duration: 0, effect: "heal" }
+          stats: { speed: 5.5, health: 100, damage: 25, fireRate: 0.5, bulletSpeed: 10 },
+          ability: { name: "Heal Burst", icon: "", cooldown: 15000, duration: 0, effect: "heal" }
         },
         ASSAULT: {
           name: "Assault",
           color: "#FF5722",
-          stats: { speed: 5, health: 90, damage: 30, fireRate: 0.5, bulletSpeed: 12 },
-          ability: { name: "Triple Shot", icon: "🔥", cooldown: 8000, duration: 0, effect: "triple" }
+          stats: { speed: 6, health: 90, damage: 30, fireRate: 0.5, bulletSpeed: 12 },
+          ability: { name: "Bullet Storm", icon: "", cooldown: 12000, duration: 0, effect: "storm" }
         }
       };
 
@@ -667,7 +993,7 @@
         // Level 1: Simple open arena - great for beginners
         training: {
           name: "Training Ground",
-          icon: "🎯",
+          icon: "",
           difficulty: 1,
           description: "Open arena perfect for learning",
           background: "#0a0e1a",
@@ -688,7 +1014,7 @@
         // Level 2: Classic arena with more cover
         arena: {
           name: "Classic Arena",
-          icon: "🏟️",
+          icon: "",
           difficulty: 2,
           description: "Balanced combat with cover",
           background: "#0a0e1a",
@@ -716,7 +1042,7 @@
         // Level 3: Urban Warfare - Collapsing buildings and danger zones
         urban: {
           name: "Urban Warfare",
-          icon: "🏙️",
+          icon: "",
           difficulty: 3,
           description: "Collapsing buildings and toxic zones",
           background: "#0f0f15",
@@ -778,7 +1104,7 @@
         // Level 4: Crossfire - All walls appear and disappear randomly
         crossfire: {
           name: "Crossfire",
-          icon: "⚔️",
+          icon: "",
           difficulty: 4,
           description: "Walls materialize and dematerialize",
           background: "#120a1a",
@@ -794,7 +1120,7 @@
         // Level 5: The Pit - Rotating barriers and gravity anomalies
         thepit: {
           name: "The Pit",
-          icon: "⭕",
+          icon: "",
           difficulty: 5,
           description: "Rotating barriers and gravity zones",
           background: "#1a1010",
@@ -863,7 +1189,7 @@
         // Level 6: DEATH ZONE - Moving walls that damage players!
         deathzone: {
           name: "Death Zone",
-          icon: "💀",
+          icon: "",
           difficulty: 6,
           description: "Beware of moving deadly walls!",
           background: "#1a0505",
@@ -971,7 +1297,7 @@
       function isWallPlacementSafe(x, y, w, h, skipObs = null, extraWalls = null, includeMoving = true) {
         const rect = { x, y, w, h };
 
-        for (const spawn of SPAWN_POINTS) {
+        for (const spawn of getSpawnPoints()) {
           if (rectCircleOverlap(rect, { x: spawn.x, y: spawn.y, r: SPAWN_SAFE_RADIUS })) return false;
         }
 
@@ -1065,15 +1391,15 @@
 
       const ARENA_EVENTS = {
         INFERNO: {
-          name: "Fire Tempest", icon: "🔥", duration: 15000,
+          name: "Fire Tempest", icon: "", duration: 15000,
           backgroundTint: 'rgba(255, 69, 0, 0.25)', wallColor: '#8B0000', gridColor: 'rgba(255, 100, 0, 0.15)'
         },
         BLIZZARD: {
-          name: "Ice Blizzard", icon: "❄️", duration: 18000,
+          name: "Ice Blizzard", icon: "", duration: 18000,
           backgroundTint: 'rgba(0, 191, 255, 0.2)', wallColor: '#4682B4', gridColor: 'rgba(200, 230, 255, 0.1)', particleColor: '#E0F7FF'
         },
         GRAVITY_CHAOS: {
-          name: "Gravity Chaos", icon: "🌀", duration: 8000,
+          name: "Gravity Chaos", icon: "", duration: 8000,
           backgroundTint: 'rgba(156, 39, 176, 0.2)', wallColor: '#7B1FA2', gridColor: 'rgba(200, 100, 255, 0.1)'
         }
       };
@@ -1081,6 +1407,16 @@
       let currentEvent = null;
       let eventStartTime = 0;
       let activeDrops = [];
+
+      function resizeCanvasToDisplaySize() {
+        const rect = canvas.getBoundingClientRect();
+        const width = Math.floor(rect.width);
+        const height = Math.floor(rect.height);
+        if (width > 0 && height > 0 && (canvas.width !== width || canvas.height !== height)) {
+          canvas.width = width;
+          canvas.height = height;
+        }
+      }
 
       function mapAllowsDrops() {
         const map = MAPS[currentMap];
@@ -1114,8 +1450,9 @@
         camps = [];
         activeDrops = [];
 
-        mapInfoEl.textContent = `Map: ${map.name}`;
-        scoreboardMapName.textContent = `Map: ${map.name} (Difficulty: ${'⭐'.repeat(map.difficulty)})`;
+        if (mapInfoEl) {
+          mapInfoEl.textContent = `Map: ${map.name}`;
+        }
       }
 
       function updateScoreboard() {
@@ -1126,17 +1463,16 @@
         
         sortedPlayers.forEach((player, i) => {
           const char = CHARACTERS[player.character];
+          const displayName = player.name || char.name;
+          const livesDots = player.lives > 0
+            ? Array.from({ length: player.lives }, () => '<span class="life-dot"></span>').join('')
+            : '-';
           const li = document.createElement('li');
           li.className = player.lives <= 0 ? 'eliminated' : '';
-          li.style.borderLeft = `4px solid ${char.color}`;
-          
-          let hearts = '';
-          for (let h = 0; h < player.lives; h++) hearts += '❤️';
           
           li.innerHTML = `
-            <span class="player-name" style="color: ${char.color}">${i + 1}. ${char.name}</span>
-            <span class="player-stats">${player.kills}K / ${player.deaths}D</span>
-            <span class="player-lives">${hearts || '☠️'}</span>
+            <span class="player-name" style="color: ${player.color || char.color}">${i + 1}. ${displayName}</span>
+            <span class="player-stats" style="color: ${player.color || char.color}">${livesDots}</span>
           `;
           
           scoreListEl.appendChild(li);
@@ -1291,9 +1627,55 @@
       function updateMapInfo() {
         const map = MAPS[currentMap];
         const mapInfoEl = document.getElementById('mapInfo');
-        if (map) {
-          mapInfoEl.textContent = `${map.icon} ${map.name} - ${'⭐'.repeat(map.difficulty)}`;
+        if (map && mapInfoEl) {
+          mapInfoEl.textContent = map.name;
         }
+      }
+
+      function initCustomMapSelect() {
+        const mapSelect = document.getElementById('mapSelect');
+        const mapSelectList = document.getElementById('mapSelectList');
+        const mapSelectLabel = document.getElementById('mapSelectLabel');
+        const mapSelectButton = document.getElementById('mapSelectButton');
+
+        if (!mapSelect || !mapSelectList || !mapSelectLabel || !mapSelectButton) return;
+
+        const setLabelFromSelect = () => {
+          const selected = mapSelect.options[mapSelect.selectedIndex];
+          mapSelectLabel.textContent = selected ? selected.textContent : 'Select map';
+        };
+
+        mapSelectList.innerHTML = '';
+        Array.from(mapSelect.options).forEach((opt) => {
+          const li = document.createElement('li');
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.textContent = opt.textContent;
+          btn.dataset.value = opt.value;
+          btn.onclick = () => {
+            mapSelect.value = opt.value;
+            setLabelFromSelect();
+            mapSelectList.classList.remove('open');
+            mapSelectButton.setAttribute('aria-expanded', 'false');
+            mapSelect.dispatchEvent(new Event('change'));
+          };
+          li.appendChild(btn);
+          mapSelectList.appendChild(li);
+        });
+
+        setLabelFromSelect();
+
+        mapSelectButton.onclick = () => {
+          const isOpen = mapSelectList.classList.toggle('open');
+          mapSelectButton.setAttribute('aria-expanded', String(isOpen));
+        };
+
+        document.addEventListener('click', (event) => {
+          if (!mapSelectButton.contains(event.target) && !mapSelectList.contains(event.target)) {
+            mapSelectList.classList.remove('open');
+            mapSelectButton.setAttribute('aria-expanded', 'false');
+          }
+        });
       }
 
       // Map selector change handler
@@ -1301,66 +1683,123 @@
         currentMap = e.target.value;
         initEnvironment(currentMap);
         updateMapInfo();
+        const mapSelectLabel = document.getElementById('mapSelectLabel');
+        if (mapSelectLabel && e.target.selectedIndex >= 0) {
+          mapSelectLabel.textContent = e.target.options[e.target.selectedIndex].textContent;
+        }
 
         // Update waiting screen map info
         const map = MAPS[currentMap];
         const waitingMapInfo = document.querySelector('#waitingScreen p#mapInfo');
         if (waitingMapInfo) {
-          waitingMapInfo.textContent = `${map.icon} ${map.name}`;
+          waitingMapInfo.textContent = map.name;
         }
 
         // Update scoreboard map info
-        scoreboardMapName.textContent = `Map: ${map.name} (Difficulty: ${'⭐'.repeat(map.difficulty)})`;
+        scoreboardMapName.textContent = `Map: ${map.name}`;
       };
 
       // Initialize map info on load
       updateMapInfo();
+      initCustomMapSelect();
+      window.addEventListener('resize', () => {
+        if (gameState === "playing") {
+          resizeCanvasToDisplaySize();
+        }
+      });
+
+      const qrImg = document.getElementById('qrCode');
+      if (qrImg) {
+        const controllerUrl = `${window.location.origin}/controller_GEOSHOOTER.html`;
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(controllerUrl)}`;
+        qrImg.src = qrUrl;
+        qrImg.alt = `QR code for ${controllerUrl}`;
+      }
+
+      const ambientAudio = document.getElementById('ambientAudio');
+      const ambientAudioLabel = document.getElementById('ambientAudioLabel');
+      if (ambientAudio && ambientAudioLabel) {
+        ambientAudioLabel.onclick = () => {
+          ambientAudio.classList.toggle('compact');
+        };
+      }
+
+      let startPhase = 0;
 
       document.getElementById("connectBtn").onclick = () => {
-        roomId = document.getElementById("room").value.trim() || "war123";
-        currentMap = document.getElementById("mapSelect").value;
+        const connectBtn = document.getElementById("connectBtn");
+        const mapSelectButton = document.getElementById("mapSelectButton");
+        const mapSelectList = document.getElementById("mapSelectList");
 
-        // Disable map selector once connected
-        document.getElementById("mapSelect").disabled = true;
-        document.getElementById("room").disabled = true;
-        document.getElementById("connectBtn").disabled = true;
+        if (startPhase === 0) {
+          roomId = document.getElementById("room").value.trim() || "war123";
+          currentMap = document.getElementById("mapSelect").value;
 
-        const serverUrl =
-          (window.location.protocol === "https:" ? "wss://" : "ws://") +
-          window.location.host;
+          document.getElementById("room").disabled = true;
+          connectBtn.disabled = true;
+          connectBtn.textContent = "Connecting...";
 
-        ws = new WebSocket(serverUrl);
+          const serverUrl =
+            (window.location.protocol === "https:" ? "wss://" : "ws://") +
+            window.location.host;
 
-        ws.onopen = () => {
-          ws.send(JSON.stringify({ type: "join", role: "pc", room: roomId, map: currentMap }));
-          const status = document.getElementById("status");
-          status.textContent = "Connected ✅";
-          status.style.color = "#00ff88";
+          ws = new WebSocket(serverUrl);
 
-          // Update waiting screen with selected map
-          const map = MAPS[currentMap];
-          const waitingMapInfo = document.querySelector('#waitingScreen p#mapInfo');
-          if (waitingMapInfo) {
-            waitingMapInfo.textContent = `${map.icon} ${map.name}`;
+          ws.onopen = () => {
+            ws.send(JSON.stringify({ type: "join", role: "pc", room: roomId, map: currentMap }));
+            const status = document.getElementById("status");
+            status.textContent = "Connected";
+            status.style.color = "#00ff88";
+
+            document.body.classList.add('start-armed');
+            connectBtn.disabled = false;
+            connectBtn.textContent = "Start the game";
+            startPhase = 1;
+          };
+
+          ws.onmessage = (e) => {
+            try {
+              const data = JSON.parse(e.data);
+              handleServerMessage(data);
+            } catch (err) {
+              console.error("Error:", err);
+            }
+          };
+
+          ws.onclose = () => {
+            document.getElementById("status").textContent = "Disconnected";
+            document.getElementById("status").style.color = "#ff4444";
+            gameState = "waiting";
+            waitingScreen.style.display = "block";
+            document.body.classList.add('start-screen');
+            document.body.classList.remove('start-armed');
+            document.getElementById('mainContainer').style.display = 'none';
+            document.getElementById("mapSelect").disabled = false;
+            if (mapSelectButton) mapSelectButton.disabled = false;
+            if (mapSelectList) mapSelectList.classList.remove('open');
+            connectBtn.disabled = false;
+            connectBtn.textContent = "Create the arena";
+            document.getElementById("room").disabled = false;
+            startPhase = 0;
+            pendingGameStart = null;
+            audioManager.stopBgMusic();
+          };
+          return;
+        }
+
+        if (startPhase === 1) {
+          startPhase = 2;
+          connectBtn.textContent = "Waiting for players...";
+          connectBtn.disabled = true;
+          if (mapSelectList) mapSelectList.classList.remove('open');
+
+          if (pendingGameStart) {
+            const pending = pendingGameStart;
+            pendingGameStart = null;
+            beginGame(pending);
           }
-        };
-
-        ws.onmessage = (e) => {
-          try {
-            const data = JSON.parse(e.data);
-            handleServerMessage(data);
-          } catch (err) {
-            console.error("Error:", err);
-          }
-        };
-
-        ws.onclose = () => {
-          document.getElementById("status").textContent = "Disconnected ❌";
-          document.getElementById("status").style.color = "#ff4444";
-          gameState = "waiting";
-          waitingScreen.style.display = "block";
-          audioManager.stopBgMusic();
-        };
+          return;
+        }
       };
 
       // Restart button handler
@@ -1380,6 +1819,8 @@
         camps = [];
         activeDrops = [];
         currentEvent = null;
+        startPhase = 0;
+        pendingGameStart = null;
 
         // Reset UI
         gameEndScreen.classList.remove('visible');
@@ -1390,11 +1831,17 @@
         document.getElementById('mainContainer').classList.remove('fullscreen-mode');
         document.getElementById('mainTitle').classList.remove('hidden');
         document.getElementById('controls').style.display = 'flex';
+        document.body.classList.add('start-screen');
+        document.body.classList.remove('start-armed');
+        document.getElementById('mainContainer').style.display = 'none';
 
         // Re-enable controls
         document.getElementById("mapSelect").disabled = false;
         document.getElementById("room").disabled = false;
         document.getElementById("connectBtn").disabled = false;
+        document.getElementById("connectBtn").textContent = "Create the arena";
+        const mapSelectButton = document.getElementById("mapSelectButton");
+        if (mapSelectButton) mapSelectButton.disabled = false;
 
         // Reset status
         const status = document.getElementById("status");
@@ -1419,14 +1866,15 @@
         
         if (winner) {
           const char = CHARACTERS[winner.character];
-          trophyIcon.textContent = '🏆';
+          const winnerColor = winner.color || char.color;
+          trophyIcon.textContent = '';
           endTitle.textContent = 'WINNER!';
-          endTitle.style.color = char.color;
-          winnerName.textContent = char.name;
-          winnerName.style.color = char.color;
-          winnerStats.textContent = `${winner.kills} Kills | ${winner.deaths} Deaths`;
+          endTitle.style.color = winnerColor;
+          winnerName.textContent = winner.name || char.name;
+          winnerName.style.color = winnerColor;
+          winnerStats.textContent = '';
         } else {
-          trophyIcon.textContent = '💀';
+          trophyIcon.textContent = 'DRAW';
           endTitle.textContent = 'DRAW!';
           endTitle.style.color = '#ff6666';
           winnerName.textContent = 'All players eliminated';
@@ -1441,16 +1889,87 @@
         
         sortedPlayers.forEach((p, i) => {
           const char = CHARACTERS[p.character];
-          const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
+          const medal = i === 0 ? '1' : i === 1 ? '2' : i === 2 ? '3' : '';
+          const displayName = p.name || char.name;
           const row = document.createElement('div');
           row.className = 'score-row';
-          row.style.color = p.lives > 0 ? char.color : '#888';
+          row.style.color = p.lives > 0 ? (p.color || char.color) : '#888';
           row.innerHTML = `
-            <span>${medal} ${char.name}</span>
-            <span>${p.kills} Kills / ${p.deaths} Deaths</span>
+            <span>${medal} ${displayName}</span>
+            <span></span>
           `;
           finalScoreList.appendChild(row);
         });
+      }
+
+      function beginGame(data) {
+        gameState = "playing";
+        waitingScreen.style.display = "none";
+        gameEndScreen.classList.remove('visible');
+        document.body.classList.remove('start-screen');
+        document.body.classList.remove('start-armed');
+        document.getElementById('mainContainer').style.display = 'flex';
+
+        document.getElementById('mainContainer').classList.add('fullscreen-mode');
+        document.getElementById('mainTitle').classList.add('hidden');
+        document.getElementById('controls').style.display = 'none';
+
+        resizeCanvasToDisplaySize();
+        requestAnimationFrame(resizeCanvasToDisplaySize);
+
+        const mapToUse = data.map || currentMap;
+        currentMap = mapToUse;
+        initEnvironment(mapToUse);
+
+        if (mapAllowsDrops()) {
+          startDropSpawning();
+        }
+        startArenaEvents();
+        if (mapAllowsHealingPads()) {
+          startHealingPadSpawning();
+        }
+
+        audioManager.playBgMusic();
+
+        const spawnPoints = getSpawnPoints();
+        data.players.forEach((p, i) => {
+          const spawn = spawnPoints[i % spawnPoints.length];
+          const char = CHARACTERS[p.character];
+
+          const playerName = p.name || '';
+          const playerColor = PLAYER_COLORS[i % PLAYER_COLORS.length];
+          players[p.id] = {
+            id: p.id,
+            x: spawn.x, y: spawn.y,
+            vx: 0, vy: 0,
+            r: 20,
+            character: p.character,
+            name: playerName,
+            color: playerColor,
+            health: char.stats.health,
+            maxHealth: char.stats.health,
+            kills: 0, deaths: 0,
+            lives: MAX_LIVES,
+            lastShot: 0,
+            lastHitBy: null,
+            isRespawning: false,
+            abilityCooldown: 0,
+            abilityActive: false,
+            abilityEndTime: 0,
+            pierceNextShot: false,
+            dashDirection: { x: 0, y: 0 },
+            lastDamageWall: 0
+          };
+        });
+
+        updateScoreboard();
+
+        ws.send(JSON.stringify({
+          type: "game_update",
+          players: Object.values(players).map(p => ({
+            id: p.id, lives: p.lives, health: p.health, maxHealth: p.maxHealth, abilityCooldown: p.abilityCooldown, abilityActive: p.abilityActive
+          }))
+        }));
       }
 
       function handleServerMessage(data) {
@@ -1465,67 +1984,16 @@
             break;
 
           case "game_start":
-            gameState = "playing";
-            waitingScreen.style.display = "none";
-            gameEndScreen.classList.remove('visible');
-
-            // Use the map from server if provided, otherwise use current selected map
-            const mapToUse = data.map || currentMap;
-            currentMap = mapToUse;
-            initEnvironment(mapToUse);
-
-            // Activate fullscreen mode automatically
-            document.getElementById('mainContainer').classList.add('fullscreen-mode');
-            document.getElementById('mainTitle').classList.add('hidden');
-            document.getElementById('controls').style.display = 'none';
-
-            if (mapAllowsDrops()) {
-              startDropSpawning();
-            }
-            startArenaEvents();
-            if (mapAllowsHealingPads()) {
-              startHealingPadSpawning();
+            if (startPhase < 2) {
+              pendingGameStart = data;
+              return;
             }
 
-            audioManager.playBgMusic();
-
-            data.players.forEach((p, i) => {
-              const spawn = SPAWN_POINTS[i % SPAWN_POINTS.length];
-              const char = CHARACTERS[p.character];
-
-              players[p.id] = {
-                id: p.id,
-                x: spawn.x, y: spawn.y,
-                vx: 0, vy: 0,
-                r: 20,
-                character: p.character,
-                health: char.stats.health,
-                maxHealth: char.stats.health,
-                kills: 0, deaths: 0,
-                lives: MAX_LIVES,
-                lastShot: 0,
-                lastHitBy: null,
-                isRespawning: false,
-                abilityCooldown: 0,
-                abilityActive: false,
-                abilityEndTime: 0,
-                pierceNextShot: false,
-                dashDirection: { x: 0, y: 0 },
-                lastDamageWall: 0
-              };
-            });
-
-            updateScoreboard();
-
-            ws.send(JSON.stringify({
-              type: "game_update",
-              players: Object.values(players).map(p => ({
-                id: p.id, lives: p.lives, health: p.health, maxHealth: p.maxHealth, abilityCooldown: p.abilityCooldown, abilityActive: p.abilityActive
-              }))
-            }));
+            beginGame(data);
             break;
 
           case "player_move":
+            if (gameState !== "playing") break;
             if (players[data.playerId]) {
               const char = CHARACTERS[players[data.playerId].character];
               const player = players[data.playerId];
@@ -1541,26 +2009,29 @@
             break;
 
           case "player_shoot":
+            if (gameState !== "playing") break;
             if (players[data.playerId]) shoot(data.playerId);
             break;
 
           case "player_ability":
+            if (gameState !== "playing") break;
             if (players[data.playerId]) activateAbility(data.playerId);
             break;
 
           case "player_action":
+            if (gameState !== "playing") break;
             const player = players[data.playerId];
             if (!player) break;
             
             if (data.action === 'blow' && player.onFire) {
               delete player.onFire;
-              ws.send(JSON.stringify({ type: 'player_status', playerId: player.id, status: 'clear', message: '✅ Fire extinguished!' }));
+              ws.send(JSON.stringify({ type: 'player_status', playerId: player.id, status: 'clear', message: 'Fire extinguished.' }));
             }
             
             if (data.action === 'shake' && player.frozen) {
               delete player.frozen;
               delete player.blizzardExposure;
-              ws.send(JSON.stringify({ type: 'player_status', playerId: player.id, status: 'clear', message: '✅ Broke free from ice!' }));
+              ws.send(JSON.stringify({ type: 'player_status', playerId: player.id, status: 'clear', message: 'Broke free from ice.' }));
             }
             break;
 
@@ -1606,38 +2077,23 @@
             audioManager.play('collectPowerup', { volume: 0.6 });
             break;
             
-          case "triple":
-            let tripleAngle = 0;
-            let tripleTarget = null;
-            let tripleDist = Infinity;
-            
-            for (const enemy of Object.values(players)) {
-              if (enemy.id === playerId || enemy.health <= 0 || enemy.lives <= 0 || enemy.isRespawning) continue;
-              const dx = enemy.x - player.x;
-              const dy = enemy.y - player.y;
-              const dist = Math.sqrt(dx * dx + dy * dy);
-              if (dist < tripleDist) { tripleDist = dist; tripleTarget = enemy; }
-            }
-            
-            if (tripleTarget) {
-              tripleAngle = Math.atan2(tripleTarget.y - player.y, tripleTarget.x - player.x);
-            } else if (Math.abs(player.vx) > 0.5 || Math.abs(player.vy) > 0.5) {
-              tripleAngle = Math.atan2(player.vy, player.vx);
-            }
-            
-            const spread = Math.PI / 8;
-            for (let i = -1; i <= 1; i++) {
-              const bulletAngle = tripleAngle + (i * spread);
+          case "storm": {
+            const bulletCount = 18;
+            const speed = char.stats.bulletSpeed;
+            const angleStep = (Math.PI * 2) / bulletCount;
+            for (let i = 0; i < bulletCount; i++) {
+              const angle = i * angleStep;
               bullets.push({
-                x: player.x + Math.cos(bulletAngle) * 30,
-                y: player.y + Math.sin(bulletAngle) * 30,
-                vx: Math.cos(bulletAngle) * char.stats.bulletSpeed,
-                vy: Math.sin(bulletAngle) * char.stats.bulletSpeed,
-                owner: playerId, damage: char.stats.damage, color: char.color, pierce: false
+                x: player.x + Math.cos(angle) * 30,
+                y: player.y + Math.sin(angle) * 30,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                owner: playerId, damage: char.stats.damage, color: (player.color || char.color), pierce: false
               });
             }
-            audioManager.play('laserGunfire', { volume: 0.7 });
+            audioManager.play('laserGunfire', { volume: 0.75 });
             break;
+          }
         }
         
         ws.send(JSON.stringify({
@@ -1684,10 +2140,11 @@
         const isPiercing = player.pierceNextShot;
         if (isPiercing) { player.pierceNextShot = false; player.abilityActive = false; }
 
+        const playerColor = player.color || char.color;
         bullets.push({
           x: player.x + dirX * 30, y: player.y + dirY * 30,
           vx: dirX * char.stats.bulletSpeed, vy: dirY * char.stats.bulletSpeed,
-          owner: playerId, damage: char.stats.damage, color: char.color, pierce: isPiercing
+          owner: playerId, damage: char.stats.damage, color: playerColor, pierce: isPiercing
         });
 
         audioManager.play('laserGunfire', { volume: 0.4 });
@@ -1768,7 +2225,8 @@
                 if (!players[playerId]) return;
                 const p = players[playerId];
                 
-                const spawn = SPAWN_POINTS[Math.floor(Math.random() * SPAWN_POINTS.length)];
+                const spawnPoints = getSpawnPoints();
+                const spawn = spawnPoints[Math.floor(Math.random() * spawnPoints.length)];
                 p.x = spawn.x; p.y = spawn.y;
                 p.health = p.maxHealth;
                 p.abilityActive = false;
@@ -1821,7 +2279,7 @@
                     type: 'player_status',
                     playerId: player.id,
                     status: 'damage',
-                    message: `💀 -${obs.damageOnTouch} HP from wall!`
+                    message: `-${obs.damageOnTouch} HP from wall!`
                   }));
                 }
               }
@@ -1848,7 +2306,7 @@
               
               if (touchingWall && !player.onFire) {
                 player.onFire = { startTime: Date.now(), damage: 8 };
-                ws.send(JSON.stringify({ type: 'player_status', playerId: player.id, status: 'on_fire', message: '🔥 YOU ARE ON FIRE! BLOW TO EXTINGUISH!' }));
+                ws.send(JSON.stringify({ type: 'player_status', playerId: player.id, status: 'on_fire', message: 'YOU ARE ON FIRE! BLOW TO EXTINGUISH!' }));
               }
             }
             
@@ -1866,7 +2324,7 @@
                 
                 if (player.blizzardExposure > 180 && !player.frozen) {
                   player.frozen = { startTime: Date.now(), canMove: false };
-                  ws.send(JSON.stringify({ type: 'player_status', playerId: player.id, status: 'frozen', message: '❄️ YOU ARE FROZEN! SHAKE TO BREAK FREE!' }));
+                  ws.send(JSON.stringify({ type: 'player_status', playerId: player.id, status: 'frozen', message: 'YOU ARE FROZEN! SHAKE TO BREAK FREE!' }));
                 }
               } else if (player.blizzardExposure) {
                 player.blizzardExposure = Math.max(0, player.blizzardExposure - 2);
@@ -1912,8 +2370,24 @@
               
               ws.send(JSON.stringify({
                 type: 'game_update',
-                players: [{ id: player.id, abilityCooldown: player.abilityCooldown, health: player.health, dropCollected: drop.type }]
+                players: [{
+                  id: player.id,
+                  abilityCooldown: player.abilityCooldown,
+                  health: player.health,
+                  dropCollected: drop.type,
+                  powerUpCollected: drop.type,
+                  powerUpSuccess: true
+                }]
               }));
+
+              if (drop.effect === 'recharge_ability') {
+                ws.send(JSON.stringify({
+                  type: 'player_status',
+                  playerId: player.id,
+                  status: 'ability_ready',
+                  message: 'Ability recharged.'
+                }));
+              }
               
               return false;
             }
@@ -2117,7 +2591,7 @@
             ctx.font = 'bold 16px "Segoe UI"';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText('⚠️', obs.x + obs.w/2, obs.y + obs.h/2);
+            ctx.fillText('!', obs.x + obs.w/2, obs.y + obs.h/2);
           }
 
           ctx.restore(); // Restore global alpha
@@ -2210,20 +2684,6 @@
               ctx.stroke();
             }
           }
-          
-          // Event timer bar
-          const eventAge = Date.now() - eventStartTime;
-          const timeLeft = currentEvent.duration - eventAge;
-          const progress = timeLeft / currentEvent.duration;
-          
-          ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-          ctx.fillRect(canvas.width/2 - 200, 10, 400, 30);
-          ctx.fillStyle = '#ff4500';
-          ctx.fillRect(canvas.width/2 - 195, 15, 390 * progress, 20);
-          ctx.fillStyle = '#fff';
-          ctx.font = 'bold 16px "Segoe UI"';
-          ctx.textAlign = 'center';
-          ctx.fillText(`${currentEvent.icon} ${currentEvent.name} - ${Math.ceil(timeLeft/1000)}s`, canvas.width/2, 28);
         }
 
         // Players
@@ -2233,29 +2693,17 @@
             ctx.font = "bold 40px 'Segoe UI'";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
-            ctx.fillText("❌", player.x, player.y);
+            ctx.fillText("X", player.x, player.y);
             return;
           }
           
           if (player.health <= 0) {
-            ctx.fillStyle = "#424242";
-            ctx.fillRect(player.x - 15, player.y - 10, 30, 35);
-            ctx.fillStyle = "#616161";
-            ctx.beginPath();
-            ctx.arc(player.x, player.y - 10, 15, Math.PI, 0, false);
-            ctx.fill();
-            ctx.fillStyle = "#fff";
-            ctx.font = "20px 'Segoe UI'";
-            ctx.textAlign = "center";
-            ctx.fillText("💀", player.x, player.y + 5);
-            ctx.fillStyle = "#ff4444";
-            ctx.font = "12px 'Segoe UI'";
-            ctx.fillText(`${player.lives} ❤️`, player.x, player.y + 30);
             return;
           }
 
           const char = CHARACTERS[player.character];
           const ability = char.ability;
+          const playerColor = player.color || char.color;
 
           // Shadow
           ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
@@ -2277,7 +2725,7 @@
 
           // Dash trail
           if (player.abilityActive && ability.effect === "dash") {
-            ctx.fillStyle = char.color + "40";
+            ctx.fillStyle = playerColor + "40";
             for (let i = 1; i <= 3; i++) {
               ctx.beginPath();
               ctx.arc(player.x - player.vx * i * 5, player.y - player.vy * i * 5, player.r * (1 - i * 0.2), 0, Math.PI * 2);
@@ -2325,8 +2773,8 @@
           }
 
           // Player shape
-          ctx.fillStyle = char.color;
-          ctx.shadowColor = char.color;
+          ctx.fillStyle = playerColor;
+          ctx.shadowColor = playerColor;
           ctx.shadowBlur = 20;
           ctx.beginPath();
           
@@ -2382,22 +2830,23 @@
 
           // Lives
           ctx.fillStyle = "#ff4444";
-          ctx.font = "10px 'Segoe UI'";
-          ctx.textAlign = "center";
-          let hearts = "";
-          for (let i = 0; i < player.lives; i++) hearts += "❤️";
-          ctx.fillText(hearts, player.x, player.y - player.r - 22);
+          const dotRadius = 7;
+          const dotSpacing = 18;
+          const totalWidth = (player.lives - 1) * dotSpacing;
+          for (let i = 0; i < player.lives; i++) {
+            const dotX = player.x - totalWidth / 2 + i * dotSpacing;
+            const dotY = player.y - player.r - 30;
+            ctx.beginPath();
+            ctx.arc(dotX, dotY, dotRadius, 0, Math.PI * 2);
+            ctx.fill();
+          }
 
           // Name
-          ctx.fillStyle = "#fff";
+          ctx.fillStyle = playerColor;
           ctx.font = "bold 12px 'Segoe UI'";
           ctx.textBaseline = "bottom";
-          ctx.fillText(char.name, player.x, player.y - player.r - 32);
-
-          // K/D
-          ctx.fillStyle = "#FFD700";
-          ctx.font = "10px 'Segoe UI'";
-          ctx.fillText(`${player.kills}/${player.deaths}`, player.x, player.y + player.r + 15);
+          const displayName = player.name || char.name;
+          ctx.fillText(displayName, player.x, player.y - player.r - 32);
 
           // Ability cooldown
           const cooldownRemaining = Math.max(0, player.abilityCooldown - Date.now());

@@ -195,37 +195,37 @@
   <body>
     <div class="background"></div>
 
-    <button class="audio-toggle" id="audioToggle">🔊</button>
+    <button class="audio-toggle" id="audioToggle">SOUND</button>
 
     <div class="wrapper">
       <div class="card">
-        <h1>🔫 GEO-SHOOTER</h1>
+        <h1>GEO-SHOOTER</h1>
         <div class="subtitle">
           Phone-controlled multiplayer<br />
           battle arena
         </div>
 
-        <a href="/pc" class="btn"> 🖥️ Launch Game Display </a>
+        <a href="/pc" class="btn">Launch Game Display</a>
 
-        <a href="/phone" class="btn secondary"> 📱 Join as Player </a>
+        <a href="/phone" class="btn secondary">Join as Player</a>
 
         <div class="divider"></div>
 
         <div class="features">
           <div class="feature">
-            <span class="feature-icon">🎮</span>
+            <span class="feature-icon">GAME</span>
             <span>5 Characters</span>
           </div>
           <div class="feature">
-            <span class="feature-icon">🗺️</span>
+            <span class="feature-icon">MAPS</span>
             <span>6 Maps</span>
           </div>
           <div class="feature">
-            <span class="feature-icon">⚡</span>
+            <span class="feature-icon">POWER</span>
             <span>Power-ups</span>
           </div>
           <div class="feature">
-            <span class="feature-icon">🌪️</span>
+            <span class="feature-icon">EVENTS</span>
             <span>Arena Events</span>
           </div>
         </div>
@@ -268,12 +268,12 @@
         
         if (isMuted) {
           bgMusic.pause();
-          audioToggle.textContent = '🔇';
+          audioToggle.textContent = 'MUTED';
         } else {
           bgMusic.play().catch(err => {
             console.log('Failed to play music:', err);
           });
-          audioToggle.textContent = '🔊';
+          audioToggle.textContent = 'SOUND';
         }
       };
 

@@ -103,7 +103,7 @@ wss.on("connection", (ws) => {
           const playerId = `player_${Date.now()}_${Math.random()
             .toString(36)
             .substr(2, 9)}`;
-          const player = { id: playerId, ws, character: null, ready: false };
+          const player = { id: playerId, ws, character: null, ready: false, name: null };
           rooms[roomId].players.push(player);
           ws.playerId = playerId;
           ws.role = "phone";
@@ -131,6 +131,9 @@ wss.on("connection", (ws) => {
           const player = room.players.find((p) => p.id === ws.playerId);
           if (player) {
             player.character = data.character;
+            if (typeof data.name === "string" && data.name.trim()) {
+              player.name = data.name.trim().slice(0, 16);
+            }
             player.ready = true;
 
             // Broadcast to PC
@@ -151,6 +154,7 @@ wss.on("connection", (ws) => {
               const playerData = room.players.map((p) => ({
                 id: p.id,
                 character: p.character,
+                name: p.name || ""
               }));
 
               if (room.pc) {
