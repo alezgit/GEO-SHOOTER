@@ -14,6 +14,37 @@
     />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+    /* 1. Define the Font */
+      @font-face {
+        font-family: "LostEntity";
+        src: url("fonts/LostEntity-8OmW2.otf") format("opentype");
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      /* 2. Apply ONLY to Main Titles (Landing, Room, Char Select, Setup) */
+      /* This ensures inputs, status text, and descriptions stay readable */
+      .header h1,               /* "GEOSHOOTER" */
+      #room-section h2,         /* "Join Battle" */
+      #character-select h2,     /* "Choose Your Fighter" */
+      .rotation-prompt h2,      /* "Setup Instructions" */
+      #axis-calibration h2,     /* "Calibrate Controls" */
+      #game-over h2 {           /* "ELIMINATED/VICTORY" */
+        font-family: "LostEntity", "Segoe UI", sans-serif;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+      }
+
+      /* 3. Apply to EVERYTHING in the Game Controller HUD */
+      /* You wanted the whole controller interface to have the font */
+      #game-controller,
+      #game-controller button,  /* Recalibrate, Fire */
+      #event-text h3,           /* Event Titles */
+      #event-text p {           /* Event Descriptions */
+        font-family: "LostEntity", "Segoe UI", sans-serif;
+        text-transform: uppercase;
+      }
       * {
         margin: 0;
         padding: 0;
@@ -602,7 +633,7 @@
         background: linear-gradient(135deg, #ff4500, #ff6b35);
         color: white;
         border-radius: 50%;
-        font-size: 1.3rem;
+        font-size: 1.7rem;
         font-weight: bold;
         border: none;
         box-shadow: 0 4px 20px rgba(255, 69, 0, 0.5);
@@ -794,7 +825,7 @@
 
     <div id="rotation-message">
       <div class="rotation-prompt">
-        <h2>📱 Setup Instructions</h2>
+        <h2>Setup Instructions</h2>
         <p><strong>LOCK your screen in PORTRAIT mode</strong></p>
         <p>Rotate your phone 90 degrees counterclockwise</p>
         <p>Tap when ready to calibrate</p>
@@ -1295,7 +1326,7 @@ function updatePlayerUI(data) {
 
         const abilityBtn = document.getElementById("ability-btn");
         const overlay = document.getElementById("cooldown-overlay");
-        const cooldownText = document.getElementById("cooldown-text");
+        // const cooldownText = document.getElementById("cooldown-text");
 
         if (remaining > 0) {
           const percent = (remaining / char.ability.cooldown) * 100;
