@@ -3,21 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GEO-SHOOTER | Battle Arena</title>
-
+    <title>GEO-SHOOTER</title>
     <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-        font-family: "Segoe UI", system-ui, sans-serif;
-      }
-
-      body {
-        height: 100vh;
-        overflow: hidden;
-        background: radial-gradient(circle at top, #1a1f3a, #050816);
-        color: white;
+      :root {
+        --glow-intensity: 0;
+        --glow-color: #ff6b35;
+        --glow-color-dim: #2a1208;
       }
 
       @font-face {
@@ -28,299 +19,736 @@
         font-display: swap;
       }
 
-      .background {
-        position: absolute;
-        inset: 0;
-        background-image: radial-gradient(
-          rgba(255, 69, 0, 0.15) 1px,
-          transparent 1px
-        );
-        background-size: 60px 60px;
-        animation: drift 40s linear infinite;
-        opacity: 0.4;
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
       }
 
-      @keyframes drift {
-        from {
-          background-position: 0 0;
-        }
-        to {
-          background-position: 600px 600px;
-        }
-      }
-
-      .wrapper {
-        position: relative;
-        z-index: 1;
+      html, body {
+        width: 100%;
         height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 2rem;
+        overflow: hidden;
+        font-family: "Segoe UI", system-ui, sans-serif;
+        cursor: none;
       }
 
-      .card {
-        width: 100%;
-        max-width: 460px;
-        text-align: center;
-        padding: 3rem 2.5rem;
-        background: rgba(10, 14, 39, 0.85);
-        border-radius: 22px;
-        border: 2px solid rgba(255, 69, 0, 0.6);
-        box-shadow: 0 0 40px rgba(255, 69, 0, 0.45),
-          inset 0 0 25px rgba(0, 0, 0, 0.6);
-        backdrop-filter: blur(8px);
-      }
-
-      h1 {
-        font-family: "LostEntity", "Segoe UI", system-ui, sans-serif;
-        font-size: 5.5rem;
-        letter-spacing: 3px;
-        margin-bottom: 0.5rem;
-        color: #ff6b35;
-        text-transform: uppercase;
-        text-shadow: 0 0 15px rgba(255, 69, 0, 0.9),
-          0 0 35px rgba(255, 69, 0, 0.6);
-      }
-
-      .subtitle {
-        font-size: 1.05rem;
-        color: #cfcfcf;
-        margin-bottom: 2.5rem;
-      }
-
-      .btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.6rem;
-        margin: 1rem auto;
-        width: 100%;
-        max-width: 320px;
-        padding: 1rem;
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: white;
-        text-decoration: none;
-        border-radius: 14px;
-        background: linear-gradient(135deg, #ff4500, #ff6b35);
-        box-shadow: 0 6px 18px rgba(255, 69, 0, 0.5),
-          inset 0 0 10px rgba(255, 255, 255, 0.1);
-        transition: all 0.25s ease;
-        cursor: pointer;
-        border: none;
-      }
-
-      .btn.secondary {
-        background: linear-gradient(135deg, #2196f3, #00bcd4);
-        box-shadow: 0 6px 18px rgba(33, 150, 243, 0.5),
-          inset 0 0 10px rgba(255, 255, 255, 0.1);
-      }
-
-      .btn:hover {
-        transform: translateY(-4px) scale(1.02);
-        box-shadow: 0 10px 28px rgba(255, 69, 0, 0.7);
-      }
-
-      .btn.secondary:hover {
-        box-shadow: 0 10px 28px rgba(33, 150, 243, 0.7);
-      }
-
-      .hint {
-        margin-top: 2.2rem;
-        font-size: 0.85rem;
-        color: #aaa;
-        line-height: 1.5;
-      }
-
-      .divider {
-        margin: 1.8rem auto;
-        width: 60%;
-        height: 1px;
-        background: linear-gradient(
-          to right,
-          transparent,
-          rgba(255, 255, 255, 0.4),
-          transparent
-        );
-      }
-
-      #ambientAudio {
+      /* ========== BACKGROUND LAYERS ========== */
+      
+      /* Layer 1: The "real" blue gradient (hidden by default) */
+      #bgRevealed {
         position: fixed;
-        right: 16px;
-        bottom: 16px;
+        inset: 0;
+        background: radial-gradient(circle at top, #1a1f3a, #050816);
+        z-index: 0;
+      }
+
+      /* Canvas that draws the darkness + light reveals */
+      #lightCanvas {
+        position: fixed;
+        inset: 0;
+        z-index: 1;
+        pointer-events: none;
+      }
+
+      /* ========== INTRO LAYER ========== */
+      #intro {
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
         display: flex;
+        flex-direction: column;
         align-items: center;
-        gap: 10px;
-        padding: 8px 12px;
-        border-radius: 999px;
-        background: rgba(10, 14, 39, 0.4);
-        border: 1px solid rgba(255, 107, 53, 0.25);
-        box-shadow: inset 0 0 0 1px rgba(255, 107, 53, 0.08);
-        opacity: 0.6;
-        transition: opacity 0.2s, transform 0.2s;
-        z-index: 10;
+        justify-content: center;
+        transition: opacity 0.3s ease;
       }
 
-      #ambientAudio:hover {
-        opacity: 0.9;
-        transform: translateY(-1px);
-      }
-
-      #ambientAudio.compact #volumeSlider {
-        width: 0;
+      #intro.hidden {
         opacity: 0;
         pointer-events: none;
       }
 
-      #muteBtn {
-        padding: 8px 12px;
-        border-radius: 999px;
-        background: rgba(255, 107, 53, 0.18);
-        box-shadow: none;
-        border: none;
-        color: #fff;
-        font-weight: 700;
+      /* Noise grain overlay */
+      #grain {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        pointer-events: none;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+        background-repeat: repeat;
+        mix-blend-mode: overlay;
+        transition: opacity 0.8s ease;
+        z-index: 10;
+      }
+
+      #intro.wake #grain {
+        opacity: 0.04;
+      }
+
+      /* ========== CURSOR LIGHT ========== */
+      #cursorLight {
+        position: fixed;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: radial-gradient(circle, 
+          rgba(255, 200, 150, 1) 0%,
+          rgba(255, 140, 80, 0.8) 30%,
+          rgba(255, 107, 53, 0) 70%);
+        pointer-events: none;
+        transform: translate(-50%, -50%);
+        z-index: 1002;
+        opacity: 0;
+        transition: opacity 0.5s ease;
+      }
+
+      #intro.wake #cursorLight {
+        opacity: 1;
+      }
+
+      /* ========== TITLE ASSEMBLY ========== */
+      #titleAssembly {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 50px;
+        z-index: 100;
+      }
+
+      /* The game title */
+      #gameTitle {
+        position: relative;
+        font-family: "LostEntity", "Segoe UI", system-ui, sans-serif;
+        font-size: clamp(3.5rem, 14vw, 9rem);
+        text-transform: uppercase;
+        letter-spacing: 6px;
+        line-height: 1;
+        text-align: center;
+        color: var(--glow-color-dim);
+        user-select: none;
+        transition: color 0.2s ease;
+      }
+
+      /* Main visible glow layer */
+      #gameTitle::before {
+        content: 'GEO-SHOOTER';
+        position: absolute;
+        inset: 0;
+        color: var(--glow-color);
+        opacity: calc(var(--glow-intensity) * 0.2);
+        transition: opacity 0.1s ease;
+        pointer-events: none;
+      }
+
+      /* Soft bloom layer */
+      #gameTitle::after {
+        content: 'GEO-SHOOTER';
+        position: absolute;
+        inset: 0;
+        color: var(--glow-color);
+        opacity: calc(var(--glow-intensity) * 0.7);
+        filter: blur(15px);
+        transition: opacity 0.1s ease;
+        pointer-events: none;
+      }
+
+      /* Dynamic text-shadow */
+      #gameTitle.glowing {
+        text-shadow: 
+          0 0 10px rgba(255, 107, 53, calc(var(--glow-intensity) * 0.9)),
+          0 0 30px rgba(255, 107, 53, calc(var(--glow-intensity) * 0.7)),
+          0 0 60px rgba(255, 107, 53, calc(var(--glow-intensity) * 0.5)),
+          0 0 100px rgba(255, 107, 53, calc(var(--glow-intensity) * 0.3)),
+          0 0 150px rgba(255, 107, 53, calc(var(--glow-intensity) * 0.15));
+      }
+
+      /* ========== POWER BUTTON ========== */
+      #powerBtn {
+        position: relative;
+        padding: 16px 40px;
         font-size: 0.9rem;
-        cursor: pointer;
+        font-weight: 600;
+        letter-spacing: 4px;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0);
+        background: transparent;
+        border: 1px solid rgba(255, 107, 53, 0);
+        border-radius: 4px;
+        cursor: none;
+        opacity: 0;
+        transform: translateY(15px);
+        transition: all 0.6s ease;
+        pointer-events: none;
       }
 
-      #volumeSlider {
-        width: 110px;
-        accent-color: #ff6b35;
+      #powerBtn.visible {
+        opacity: 1;
+        transform: translateY(0);
+        color: rgba(255, 255, 255, 0.5);
+        border-color: rgba(255, 107, 53, 0.35);
+        pointer-events: auto;
+      }
+
+      #powerBtn:hover {
+        color: rgba(255, 255, 255, 0.95);
+        border-color: rgba(255, 107, 53, 0.8);
+        box-shadow: 0 0 30px rgba(255, 107, 53, 0.3),
+                    inset 0 0 20px rgba(255, 107, 53, 0.1);
+      }
+
+      #powerBtn:active {
+        transform: scale(0.97);
+      }
+
+      /* Small LED indicator on button */
+      #powerBtn::before {
+        content: '';
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 6px;
         height: 6px;
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.08);
+        border-radius: 50%;
+        background: var(--glow-color);
+        opacity: 0.7;
+        box-shadow: 0 0 10px var(--glow-color);
       }
 
-      #ambientAudioLabel {
-        font-size: 0.9em;
-        color: rgba(255, 255, 255, 0.55);
-        letter-spacing: 1px;
-        cursor: pointer;
+      /* ========== CRT FLASH OVERLAY ========== */
+      #crtFlash {
+        position: fixed;
+        inset: 0;
+        z-index: 2000;
+        pointer-events: none;
+        opacity: 0;
       }
 
-      @media (max-width: 480px) {
-        h1 {
-          font-size: 4rem;
-        }
+      #crtFlash::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.95);
+        box-shadow: 
+          0 0 40px 15px rgba(255, 255, 255, 0.8),
+          0 0 80px 30px rgba(255, 107, 53, 0.6);
+        transform: scaleX(0);
+        transform-origin: center;
+      }
 
-        .card {
-          padding: 2.5rem 1.8rem;
+      #crtFlash::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: white;
+        opacity: 0;
+      }
+
+      #crtFlash.active {
+        opacity: 1;
+      }
+
+      #crtFlash.active::before {
+        animation: scanlineExpand 0.15s ease-out forwards;
+      }
+
+      #crtFlash.active::after {
+        animation: screenFlash 0.4s ease-out forwards;
+      }
+
+      @keyframes scanlineExpand {
+        0% { transform: scaleX(0); }
+        50% { transform: scaleX(1); }
+        100% { transform: scaleX(1); opacity: 0; }
+      }
+
+      @keyframes screenFlash {
+        0% { opacity: 0; }
+        25% { opacity: 0.95; }
+        100% { opacity: 0; }
+      }
+
+      #intro.powering-on {
+        animation: screenDistort 0.35s ease-out;
+      }
+
+      @keyframes screenDistort {
+        0% {
+          filter: brightness(1) contrast(1);
+          transform: scale(1);
         }
+        30% {
+          filter: brightness(4) contrast(1.5);
+          transform: scale(1.03, 0.97);
+        }
+        60% {
+          filter: brightness(2) contrast(1.2);
+          transform: scale(0.99, 1.01);
+        }
+        100% {
+          filter: brightness(1) contrast(1);
+          transform: scale(1);
+        }
+      }
+
+      /* ========== HINT TEXT ========== */
+      #hintText {
+        position: fixed;
+        bottom: 40px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 0.7rem;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0);
+        transition: color 1s ease;
+        pointer-events: none;
+        z-index: 100;
+      }
+
+      #intro:not(.wake) #hintText {
+        color: rgba(255, 255, 255, 0.12);
+        animation: hintPulse 3s ease-in-out infinite;
+      }
+
+      @keyframes hintPulse {
+        0%, 100% { opacity: 0.4; }
+        50% { opacity: 1; }
       }
     </style>
   </head>
-
   <body>
-    <div class="background"></div>
+    <!-- Background: blue gradient (revealed by light) -->
+    <div id="bgRevealed"></div>
+    
+    <!-- Canvas: draws black darkness with holes where light is -->
+    <canvas id="lightCanvas"></canvas>
 
-    <div id="ambientAudio" class="compact">
-      <button id="muteBtn">SOUND</button>
-      <input type="range" id="volumeSlider" min="0" max="100" value="70" />
-      <span id="ambientAudioLabel">AUDIO</span>
-    </div>
-
-    <div class="wrapper">
-      <div class="card">
-        <h1>GEO-SHOOTER</h1>
-        <div class="subtitle">
-          Phone-controlled multiplayer<br />
-          battle arena
-        </div>
-
-        <a href="/pc" class="btn" id="launchPc">Launch Game Display</a>
-
-        <a href="/phone" class="btn secondary">Join as Player</a>
-
-        <div class="divider"></div>
-
-        <div class="hint">
-          Open the game screen on a computer<br />
-          Use your phone as the controller
-        </div>
+    <!-- Intro Layer -->
+    <div id="intro" class="powered-off">
+      <div id="grain"></div>
+      <div id="cursorLight"></div>
+      
+      <div id="titleAssembly">
+        <h1 id="gameTitle">GEO-SHOOTER</h1>
+        <button id="powerBtn">Power On</button>
       </div>
+      
+      <div id="hintText">Move to wake</div>
     </div>
 
-    <audio id="bgMusic" loop>
-      <source src="sounds/bg-music.mp3" type="audio/mpeg" />
-    </audio>
+    <!-- CRT Flash Overlay -->
+    <div id="crtFlash"></div>
 
     <script>
-      const bgMusic = document.getElementById('bgMusic');
-      const muteBtn = document.getElementById('muteBtn');
-      const volumeSlider = document.getElementById('volumeSlider');
-      const ambientAudio = document.getElementById('ambientAudio');
-      const ambientAudioLabel = document.getElementById('ambientAudioLabel');
-      const launchPc = document.getElementById('launchPc');
-      let isMuted = true;
+      // ========== MOBILE DETECTION ==========
+      function isMobile() {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
+               || (window.innerWidth <= 768 && 'ontouchstart' in window);
+      }
 
-      bgMusic.volume = volumeSlider.value / 100;
-      muteBtn.textContent = isMuted ? 'MUTED' : 'SOUND';
+      if (isMobile()) {
+        window.location.href = '/phone';
+      }
 
-      let hasInteracted = false;
+      // ========== CANVAS SETUP ==========
+      const canvas = document.getElementById('lightCanvas');
+      const ctx = canvas.getContext('2d');
 
-      function playMusic() {
-        if (!hasInteracted) {
-          hasInteracted = true;
-          bgMusic.play().catch(err => {
-            console.log('Auto-play blocked, waiting for user interaction');
-          });
+      function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      resizeCanvas();
+      window.addEventListener('resize', resizeCanvas);
+
+      // ========== TRAIL SYSTEM ==========
+      const trailPoints = [];
+      const maxTrailLength = 50;
+
+      class TrailPoint {
+        constructor(x, y, intensity) {
+          this.x = x;
+          this.y = y;
+          this.intensity = intensity;
+          this.life = 1;
+          this.baseRadius = 60 + intensity * 100;
+        }
+
+        update() {
+          this.life -= 0.012;
+          return this.life > 0;
+        }
+
+        get radius() {
+          return this.baseRadius * (0.5 + this.life * 0.5);
+        }
+
+        get alpha() {
+          return this.life * this.intensity * 0.7;
         }
       }
 
-      document.body.addEventListener('click', playMusic, { once: true });
-      document.body.addEventListener('touchstart', playMusic, { once: true });
-
-      muteBtn.onclick = (e) => {
-        e.stopPropagation();
-        isMuted = !isMuted;
-        
-        if (isMuted) {
-          bgMusic.pause();
-          muteBtn.textContent = 'MUTED';
-        } else {
-          bgMusic.play().catch(err => {
-            console.log('Failed to play music:', err);
-          });
-          muteBtn.textContent = 'SOUND';
-        }
+      // ========== STATE MANAGEMENT ==========
+      const State = {
+        OFF: 'off',
+        WAKE: 'wake',
+        READY: 'ready',
+        POWER_ON: 'power_on'
       };
 
-      volumeSlider.addEventListener('input', (e) => {
-        bgMusic.volume = e.target.value / 100;
-      });
+      let currentState = State.OFF;
+      let mouseX = window.innerWidth / 2;
+      let mouseY = window.innerHeight / 2;
+      let targetGlow = 0, currentGlow = 0;
+      let interactionTime = 0;
+      let lastMoveTime = 0;
+      let hasInteracted = false;
 
-      if (ambientAudio && ambientAudioLabel) {
-        ambientAudioLabel.onclick = () => {
-          ambientAudio.classList.toggle('compact');
-        };
+      // ========== DOM ELEMENTS ==========
+      const intro = document.getElementById('intro');
+      const gameTitle = document.getElementById('gameTitle');
+      const powerBtn = document.getElementById('powerBtn');
+      const crtFlash = document.getElementById('crtFlash');
+      const cursorLight = document.getElementById('cursorLight');
+      const hintText = document.getElementById('hintText');
+
+      // ========== WEB AUDIO API ==========
+      let audioCtx = null;
+      let humOscillator = null;
+      let humGain = null;
+
+      function initAudio() {
+        if (audioCtx) return;
+        
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        humOscillator = audioCtx.createOscillator();
+        humGain = audioCtx.createGain();
+        
+        humOscillator.type = 'sine';
+        humOscillator.frequency.setValueAtTime(60, audioCtx.currentTime);
+        humGain.gain.setValueAtTime(0, audioCtx.currentTime);
+        
+        const harmonic = audioCtx.createOscillator();
+        const harmonicGain = audioCtx.createGain();
+        harmonic.type = 'sine';
+        harmonic.frequency.setValueAtTime(120, audioCtx.currentTime);
+        harmonicGain.gain.setValueAtTime(0, audioCtx.currentTime);
+        
+        humOscillator.connect(humGain);
+        harmonic.connect(harmonicGain);
+        humGain.connect(audioCtx.destination);
+        harmonicGain.connect(audioCtx.destination);
+        
+        humOscillator.start();
+        harmonic.start();
+        
+        humOscillator._harmonic = harmonic;
+        humOscillator._harmonicGain = harmonicGain;
       }
 
-      function persistAudioState() {
-        const state = {
-          time: bgMusic.currentTime || 0,
-          muted: isMuted,
-          volume: bgMusic.volume,
-          playing: !bgMusic.paused && !isMuted
-        };
-        localStorage.setItem('geo_audio_state', JSON.stringify(state));
+      function setHumVolume(volume) {
+        if (!humGain) return;
+        const maxVol = 0.012;
+        humGain.gain.setTargetAtTime(volume * maxVol, audioCtx.currentTime, 0.1);
+        if (humOscillator._harmonicGain) {
+          humOscillator._harmonicGain.gain.setTargetAtTime(volume * maxVol * 0.25, audioCtx.currentTime, 0.1);
+        }
       }
 
-      launchPc.addEventListener('click', persistAudioState);
-      window.addEventListener('pagehide', persistAudioState);
-      document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'hidden') {
-          persistAudioState();
+      function playPowerOnSound() {
+        if (!audioCtx) initAudio();
+        
+        const now = audioCtx.currentTime;
+        
+        const osc = audioCtx.createOscillator();
+        const oscGain = audioCtx.createGain();
+        
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(80, now);
+        osc.frequency.exponentialRampToValueAtTime(900, now + 0.12);
+        osc.frequency.exponentialRampToValueAtTime(150, now + 0.3);
+        
+        oscGain.gain.setValueAtTime(0.18, now);
+        oscGain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+        
+        osc.connect(oscGain);
+        oscGain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.4);
+
+        const bufferSize = audioCtx.sampleRate * 0.15;
+        const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const output = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          output[i] = Math.random() * 2 - 1;
+        }
+        
+        const noise = audioCtx.createBufferSource();
+        const noiseGain = audioCtx.createGain();
+        const noiseFilter = audioCtx.createBiquadFilter();
+        
+        noise.buffer = noiseBuffer;
+        noiseFilter.type = 'bandpass';
+        noiseFilter.frequency.setValueAtTime(2500, now);
+        noiseGain.gain.setValueAtTime(0.12, now);
+        noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+        
+        noise.connect(noiseFilter);
+        noiseFilter.connect(noiseGain);
+        noiseGain.connect(audioCtx.destination);
+        noise.start(now);
+        noise.stop(now + 0.15);
+      }
+
+      // ========== STATE TRANSITIONS ==========
+      function setState(newState) {
+        if (currentState === newState) return;
+        
+        currentState = newState;
+        
+        switch (newState) {
+          case State.WAKE:
+            intro.classList.remove('powered-off');
+            intro.classList.add('wake');
+            gameTitle.classList.add('glowing');
+            hintText.style.color = 'rgba(255,255,255,0)';
+            break;
+            
+          case State.READY:
+            powerBtn.classList.add('visible');
+            break;
+            
+          case State.POWER_ON:
+            triggerPowerOn();
+            break;
+        }
+      }
+
+      function triggerPowerOn() {
+        playPowerOnSound();
+        setHumVolume(0);
+        
+        intro.classList.add('powering-on');
+        crtFlash.classList.add('active');
+        
+        currentGlow = 1;
+        document.documentElement.style.setProperty('--glow-intensity', '1');
+        
+        setTimeout(() => {
+          intro.classList.add('hidden');
+          
+          setTimeout(() => {
+            window.location.href = '/pc';
+          }, 300);
+        }, 400);
+      }
+
+      // ========== MOUSE TRACKING ==========
+      let mouseVelocity = 0;
+      let prevMouseX = mouseX, prevMouseY = mouseY;
+      let frameCount = 0;
+
+      function handleMouseMove(e) {
+        if (!hasInteracted) {
+          hasInteracted = true;
+          initAudio();
+        }
+        
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+        
+        // Update cursor light position
+        cursorLight.style.left = mouseX + 'px';
+        cursorLight.style.top = mouseY + 'px';
+        
+        // Calculate velocity
+        const dx = mouseX - prevMouseX;
+        const dy = mouseY - prevMouseY;
+        mouseVelocity = Math.sqrt(dx * dx + dy * dy);
+        prevMouseX = mouseX;
+        prevMouseY = mouseY;
+        
+        // Track interaction time
+        const now = Date.now();
+        if (now - lastMoveTime < 200) {
+          interactionTime += (now - lastMoveTime);
+        } else {
+          interactionTime = Math.max(0, interactionTime - 500);
+        }
+        lastMoveTime = now;
+        
+        // State transitions
+        if (currentState === State.OFF && mouseVelocity > 3) {
+          setState(State.WAKE);
+        }
+        
+        if (currentState === State.WAKE && interactionTime > 1000) {
+          setState(State.READY);
+        }
+        
+        // Calculate glow
+        if (currentState !== State.OFF) {
+          const centerX = window.innerWidth / 2;
+          const centerY = window.innerHeight / 2;
+          const dist = Math.sqrt(Math.pow(mouseX - centerX, 2) + Math.pow(mouseY - centerY, 2));
+          const maxDist = Math.sqrt(Math.pow(centerX, 2) + Math.pow(centerY, 2));
+          
+          const proximityFactor = 1 - (dist / maxDist);
+          const velocityBonus = Math.min(mouseVelocity / 40, 0.35);
+          
+          targetGlow = Math.min(1, proximityFactor * 0.6 + velocityBonus + 0.25);
+          
+          // Add trail point every few frames
+          if (frameCount % 3 === 0 && mouseVelocity > 2) {
+            const intensity = Math.min(1, 0.4 + currentGlow * 0.6);
+            trailPoints.push(new TrailPoint(mouseX, mouseY, intensity));
+            
+            if (trailPoints.length > maxTrailLength) {
+              trailPoints.shift();
+            }
+          }
+        }
+      }
+
+      // ========== RENDER CANVAS ==========
+      function drawLightCanvas() {
+        // Start with full black
+        ctx.fillStyle = '#020204';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Use 'destination-out' to cut holes in the black
+        ctx.globalCompositeOperation = 'destination-out';
+        
+        // Draw trail points (older = more faded holes)
+        for (let i = trailPoints.length - 1; i >= 0; i--) {
+          const point = trailPoints[i];
+          if (!point.update()) {
+            trailPoints.splice(i, 1);
+            continue;
+          }
+          
+          const gradient = ctx.createRadialGradient(
+            point.x, point.y, 0,
+            point.x, point.y, point.radius
+          );
+          gradient.addColorStop(0, `rgba(255, 255, 255, ${point.alpha})`);
+          gradient.addColorStop(0.5, `rgba(255, 255, 255, ${point.alpha * 0.4})`);
+          gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+          
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.arc(point.x, point.y, point.radius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        
+        // Draw cursor light (strongest reveal)
+        if (currentState !== State.OFF) {
+          const cursorRadius = 80 + currentGlow * 120;
+          const cursorAlpha = 0.4 + currentGlow * 0.5;
+          
+          const cursorGradient = ctx.createRadialGradient(
+            mouseX, mouseY, 0,
+            mouseX, mouseY, cursorRadius
+          );
+          cursorGradient.addColorStop(0, `rgba(255, 255, 255, ${cursorAlpha})`);
+          cursorGradient.addColorStop(0.3, `rgba(255, 255, 255, ${cursorAlpha * 0.6})`);
+          cursorGradient.addColorStop(0.7, `rgba(255, 255, 255, ${cursorAlpha * 0.2})`);
+          cursorGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+          
+          ctx.fillStyle = cursorGradient;
+          ctx.beginPath();
+          ctx.arc(mouseX, mouseY, cursorRadius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        
+        // Draw title glow reveal
+        if (currentGlow > 0.05) {
+          const titleRect = gameTitle.getBoundingClientRect();
+          const titleCenterX = titleRect.left + titleRect.width / 2;
+          const titleCenterY = titleRect.top + titleRect.height / 2;
+          const titleRadius = Math.max(titleRect.width, titleRect.height) * 0.7 + currentGlow * 200;
+          
+          const titleAlpha = currentGlow * 0.75;
+          
+          const titleGradient = ctx.createRadialGradient(
+            titleCenterX, titleCenterY, 0,
+            titleCenterX, titleCenterY, titleRadius
+          );
+          titleGradient.addColorStop(0, `rgba(255, 255, 255, ${titleAlpha})`);
+          titleGradient.addColorStop(0.4, `rgba(255, 255, 255, ${titleAlpha * 0.5})`);
+          titleGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+          
+          ctx.fillStyle = titleGradient;
+          ctx.beginPath();
+          ctx.arc(titleCenterX, titleCenterY, titleRadius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        
+        ctx.globalCompositeOperation = 'source-over';
+      }
+
+      // ========== ANIMATION LOOP ==========
+      function animate() {
+        frameCount++;
+        
+        // Smooth glow
+        const glowSpeed = 0.06;
+        currentGlow += (targetGlow - currentGlow) * glowSpeed;
+        
+        // Decay if not moving
+        if (Date.now() - lastMoveTime > 250 && currentState !== State.POWER_ON) {
+          targetGlow *= 0.94;
+        }
+        
+        // Apply glow to title
+        document.documentElement.style.setProperty('--glow-intensity', currentGlow.toFixed(4));
+        
+        // Scale cursor light
+        const cursorScale = 0.8 + currentGlow * 1.2;
+        cursorLight.style.transform = `translate(-50%, -50%) scale(${cursorScale})`;
+        
+        // Audio
+        if (currentState === State.WAKE || currentState === State.READY) {
+          setHumVolume(currentGlow);
+        }
+        
+        // Decay interaction time
+        if (Date.now() - lastMoveTime > 800 && currentState === State.WAKE) {
+          interactionTime = Math.max(0, interactionTime - 40);
+        }
+        
+        // Render
+        drawLightCanvas();
+        
+        requestAnimationFrame(animate);
+      }
+
+      // ========== EVENT LISTENERS ==========
+      document.addEventListener('mousemove', handleMouseMove);
+      
+      powerBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (currentState === State.READY) {
+          setState(State.POWER_ON);
         }
       });
 
-      const buttons = document.querySelectorAll('.btn');
-      buttons.forEach(btn => {
-        btn.addEventListener('mouseenter', () => {
-          // Optional: add hover sound effect here
-        });
+      document.addEventListener('contextmenu', e => e.preventDefault());
+
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden && humGain) {
+          setHumVolume(0);
+        }
       });
+
+      // ========== INITIALIZE ==========
+      animate();
     </script>
   </body>
 </html>
