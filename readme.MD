@@ -77,8 +77,8 @@ npm run start
 ## 🎮 How to Play
 
 1. **Launch the Hub**: Open `landing.html` (or your server root) on your computer.
-2. **Host the Screen**: Select **"OPEN GAME SCREEN"**, choose a map, enter a Room ID, and click **Connect**.
-3. **Join with Phone**: Open the server URL on your smartphone, select **"OPEN CONTROLLER"**, and enter the **same Room ID**.
+2. **Host the Screen**: Select **"Launch Game Display"**, choose a map, enter a Room ID, and click **Connect**.
+3. **Join with Phone**: Open the server URL on your smartphone, select **"Join as Player"**, and enter the **same Room ID**.
 4. **Calibrate & Battle**:
 
 - Select your hero class.
