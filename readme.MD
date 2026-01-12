@@ -1,13 +1,3 @@
-# Web Technologies - FEUP-MM0047-2025/2026
-
-#### Group Members (G05)
-
-```
-Alessandro Zocchi
-Dayo Ashaolu
-Paolo Pascarelli
-```
-
 # GEO-SHOOTER: Battle Arena
 
 **GEO-SHOOTER** is a fast-paced, multiplayer battle arena game designed for local cooperative or competitive play. It features a unique control scheme where players use their mobile devices as motion-sensitive controllers to navigate and battle on a central computer screen.
@@ -18,7 +8,7 @@ Paolo Pascarelli
 
 - **Multiplayer Arena**: Battle against friends in real-time using a room-based matchmaking system.
 - **Motion Control**: Use your smartphone's gyroscope and accelerometer to move your character.
-- **Multiple Character Classes**: Choose from five distinct fighters: Tank, Sniper, Runner, Balanced, and Assault—each with unique stats and special abilities like Shields or Dashing.
+- **Multiple Character Classes**: Choose from five distinct fighters: Tank, Sniper, Runner, Balanced, and Assault, each with unique stats and special abilities like Shields or Dashing.
 - **Dynamic Maps**: Six different arenas ranging from "Training Grounds" to "The Pit," featuring hazards like toxic zones, moving walls, and gravity anomalies.
 - **Immersive Audio**: Full audio system including background music and sound effects for gunfire, power-ups, and respawns.
 
