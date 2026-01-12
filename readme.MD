@@ -1,3 +1,11 @@
+## Group Members (G05) - FEUP-MM0047
+
+```
+Alessandro Zocchi
+Dayo Ashaolu
+Paolo Pascarelli
+```
+
 # GEO-SHOOTER: Battle Arena
 
 **GEO-SHOOTER** is a fast-paced, multiplayer battle arena game designed for local cooperative or competitive play. It features a unique control scheme where players use their mobile devices as motion-sensitive controllers to navigate and battle on a central computer screen.
@@ -89,7 +97,7 @@ node server.js
 
 ## 🎮 How to Play
 
-1. **Launch the Game**: On your computer, open a browser and go to `https://localhost:8443` (or your local IP address).
+1. **Launch the Game**: On your computer, open a browser and go to `https://<YOUR-IP>:8443` preferrably or `https://localhost:8443` alternatively.
 2. **Access the Controller**:
 
 - Scan the QR code displayed on the "Power On" screen or the Game Arena.
