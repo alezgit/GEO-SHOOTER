@@ -1,0 +1,333 @@
+:root {
+  --glow-intensity: 0;
+  --glow-color: #ff6b35;
+  --glow-color-dim: #2a1208;
+}
+
+@font-face {
+  font-family: "LostEntity";
+  src: url("fonts/LostEntity-8OmW2.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  cursor: none;
+}
+
+/* ========== BACKGROUND LAYERS ========== */
+
+/* Layer 1: The "real" blue gradient (hidden by default) */
+#bgRevealed {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at top, #1a1f3a, #050816);
+  z-index: 0;
+}
+
+/* Canvas that draws the darkness + light reveals */
+#lightCanvas {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* ========== INTRO LAYER ========== */
+#intro {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.3s ease;
+}
+
+#intro.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Noise grain overlay */
+#grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  mix-blend-mode: overlay;
+  transition: opacity 0.8s ease;
+  z-index: 10;
+}
+
+#intro.wake #grain {
+  opacity: 0.04;
+}
+
+/* ========== CURSOR LIGHT ========== */
+#cursorLight {
+  position: fixed;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 200, 150, 1) 0%,
+    rgba(255, 140, 80, 0.8) 30%,
+    rgba(255, 107, 53, 0) 70%
+  );
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  z-index: 1002;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+#intro.wake #cursorLight {
+  opacity: 1;
+}
+
+/* ========== TITLE ASSEMBLY ========== */
+#titleAssembly {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 50px;
+  z-index: 100;
+}
+
+/* The game title */
+#gameTitle {
+  position: relative;
+  font-family: "LostEntity", "Segoe UI", system-ui, sans-serif;
+  font-size: clamp(3.5rem, 14vw, 9rem);
+  text-transform: uppercase;
+  letter-spacing: 6px;
+  line-height: 1;
+  text-align: center;
+  color: var(--glow-color-dim);
+  user-select: none;
+  transition: color 0.2s ease;
+}
+
+/* Main visible glow layer */
+#gameTitle::before {
+  content: "GEO-SHOOTER";
+  position: absolute;
+  inset: 0;
+  color: var(--glow-color);
+  opacity: calc(var(--glow-intensity) * 0.2);
+  transition: opacity 0.1s ease;
+  pointer-events: none;
+}
+
+/* Soft bloom layer */
+#gameTitle::after {
+  content: "GEO-SHOOTER";
+  position: absolute;
+  inset: 0;
+  color: var(--glow-color);
+  opacity: calc(var(--glow-intensity) * 0.7);
+  filter: blur(15px);
+  transition: opacity 0.1s ease;
+  pointer-events: none;
+}
+
+/* Dynamic text-shadow */
+#gameTitle.glowing {
+  text-shadow: 0 0 10px rgba(255, 107, 53, calc(var(--glow-intensity) * 0.9)),
+    0 0 30px rgba(255, 107, 53, calc(var(--glow-intensity) * 0.7)),
+    0 0 60px rgba(255, 107, 53, calc(var(--glow-intensity) * 0.5)),
+    0 0 100px rgba(255, 107, 53, calc(var(--glow-intensity) * 0.3)),
+    0 0 150px rgba(255, 107, 53, calc(var(--glow-intensity) * 0.15));
+}
+
+/* ========== POWER BUTTON ========== */
+#powerBtn {
+  position: relative;
+  padding: 16px 40px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0);
+  background: transparent;
+  border: 1px solid rgba(255, 107, 53, 0);
+  border-radius: 4px;
+  cursor: none;
+  opacity: 0;
+  transform: translateY(15px);
+  transition: all 0.6s ease;
+  pointer-events: none;
+}
+
+#powerBtn.visible {
+  opacity: 1;
+  transform: translateY(0);
+  color: rgba(255, 255, 255, 0.5);
+  border-color: rgba(255, 107, 53, 0.35);
+  pointer-events: auto;
+}
+
+#powerBtn:hover {
+  color: rgba(255, 255, 255, 0.95);
+  border-color: rgba(255, 107, 53, 0.8);
+  box-shadow: 0 0 30px rgba(255, 107, 53, 0.3),
+    inset 0 0 20px rgba(255, 107, 53, 0.1);
+}
+
+#powerBtn:active {
+  transform: scale(0.97);
+}
+
+/* Small LED indicator on button */
+#powerBtn::before {
+  content: "";
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--glow-color);
+  opacity: 0.7;
+  box-shadow: 0 0 10px var(--glow-color);
+}
+
+/* ========== CRT FLASH OVERLAY ========== */
+#crtFlash {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  pointer-events: none;
+  opacity: 0;
+}
+
+#crtFlash::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 0 40px 15px rgba(255, 255, 255, 0.8),
+    0 0 80px 30px rgba(255, 107, 53, 0.6);
+  transform: scaleX(0);
+  transform-origin: center;
+}
+
+#crtFlash::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: white;
+  opacity: 0;
+}
+
+#crtFlash.active {
+  opacity: 1;
+}
+
+#crtFlash.active::before {
+  animation: scanlineExpand 0.15s ease-out forwards;
+}
+
+#crtFlash.active::after {
+  animation: screenFlash 0.4s ease-out forwards;
+}
+
+@keyframes scanlineExpand {
+  0% {
+    transform: scaleX(0);
+  }
+  50% {
+    transform: scaleX(1);
+  }
+  100% {
+    transform: scaleX(1);
+    opacity: 0;
+  }
+}
+
+@keyframes screenFlash {
+  0% {
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.95;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+#intro.powering-on {
+  animation: screenDistort 0.35s ease-out;
+}
+
+@keyframes screenDistort {
+  0% {
+    filter: brightness(1) contrast(1);
+    transform: scale(1);
+  }
+  30% {
+    filter: brightness(4) contrast(1.5);
+    transform: scale(1.03, 0.97);
+  }
+  60% {
+    filter: brightness(2) contrast(1.2);
+    transform: scale(0.99, 1.01);
+  }
+  100% {
+    filter: brightness(1) contrast(1);
+    transform: scale(1);
+  }
+}
+
+/* ========== HINT TEXT ========== */
+#hintText {
+  position: fixed;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.7rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0);
+  transition: color 1s ease;
+  pointer-events: none;
+  z-index: 100;
+}
+
+#intro:not(.wake) #hintText {
+  color: rgba(255, 255, 255, 0.12);
+  animation: hintPulse 3s ease-in-out infinite;
+}
+
+@keyframes hintPulse {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
