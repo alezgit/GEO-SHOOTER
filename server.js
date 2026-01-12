@@ -249,7 +249,7 @@ wss.on("connection", (ws) => {
             p.ws.send(JSON.stringify(data));
           });
         }
-      } else if (data.type === "player_status") {
+      } else if (data.type === "player_status" || data.type === "status") {
         // PC sends status to specific player
         const room = rooms[ws.room];
         if (room && ws.role === "pc") {

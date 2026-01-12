@@ -1214,7 +1214,29 @@
             window.removeEventListener("devicemotion", handleMotion);
 
             console.log("Game restarted - select character");
+
+            
           }
+          // ----------------------------------------------------
+// ADD THIS BLOCK TO FIX THE ABILITY RECHARGE
+// ----------------------------------------------------
+else if (data.type === 'status') {
+    if (data.status === 'ability_ready') {
+        // 1. Reset the timer variable
+        abilityCooldownEnd = 0; 
+        
+        // 2. Visually update the button immediately
+        updateAbilityCooldown(); 
+        
+        // 3. Vibrate to tell the player (Optional)
+        if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+    } 
+    // Only include this 'else' if you actually have a showStatusWarning function defined
+    // else {
+    //    showStatusWarning(data.status, data.message);
+    // }
+}
+// ----------------------------------------------------
         } catch (e) {
           console.error("Error parsing message:", e);
         }
@@ -1230,25 +1252,29 @@
         statusEl.style.background = "rgba(255,0,0,0.2)";
       };
 
-      function updatePlayerUI(data) {
-        if (data.abilityCooldown !== undefined) {
-          abilityCooldownEnd = data.abilityCooldown;
-          updateAbilityCooldown();
-        }
+function updatePlayerUI(data) {
+        // 1. Update Health
+        const healthPercent = (data.health / data.maxHealth) * 100;
+        document.getElementById("health-fill").style.width = healthPercent + "%";
+        document.getElementById("health-text").textContent = Math.ceil(data.health) + "/" + data.maxHealth;
 
-        const collectedType = data.dropCollected || data.powerUpCollected;
-        if (collectedType) {
-          if (collectedType === "ABILITY") {
+        // 2. Check for Ability Item Pickup (The Fix)
+        // If the server tells us we collected the ability item OR the cooldown is strictly 0:
+        if (data.dropCollected === "ABILITY" || (data.abilityCooldown === 0 && abilityCooldownEnd > Date.now())) {
+            // Force reset local timer
             abilityCooldownEnd = 0;
-            updateAbilityCooldown();
+            
+            // Force visual update immediately
+            updateAbilityCooldown(); 
+            
             const abilityBtn = document.getElementById("ability-btn");
-            const overlay = document.getElementById("cooldown-overlay");
-            const cooldownText = document.getElementById("cooldown-text");
-            if (abilityBtn) abilityBtn.classList.remove("on-cooldown");
-            if (overlay) overlay.style.height = "0%";
-            if (cooldownText) cooldownText.style.display = "none";
-          }
-          flashPowerUp(data.powerUpSuccess !== false);
+            if (abilityBtn) {
+                abilityBtn.classList.remove("on-cooldown");
+                abilityBtn.classList.add("ready");
+            }
+            
+            // Optional: Haptic feedback
+            if (navigator.vibrate) navigator.vibrate(50);
         }
       }
 

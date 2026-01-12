@@ -1964,12 +1964,21 @@
 
         updateScoreboard();
 
-        ws.send(JSON.stringify({
-          type: "game_update",
-          players: Object.values(players).map(p => ({
-            id: p.id, lives: p.lives, health: p.health, maxHealth: p.maxHealth, abilityCooldown: p.abilityCooldown, abilityActive: p.abilityActive
-          }))
-        }));
+        // Create the player list with the new 'dropCollected' field
+          const playerList = Object.values(players).map(p => {
+             const pData = { 
+                id: p.id, 
+                lives: p.lives, 
+                health: p.health, 
+                maxHealth: p.maxHealth, 
+                abilityCooldown: p.abilityCooldown, 
+                abilityActive: p.abilityActive,
+                dropCollected: p.dropCollected // Send the flag
+             };
+             p.dropCollected = null; // Clear it so it doesn't trigger twice
+             return pData;
+          });
+          ws.send(JSON.stringify({ type: "game_update", players: playerList }));
       }
 
       function handleServerMessage(data) {
@@ -2356,44 +2365,55 @@
           });
 
           // Power-up drops
-          activeDrops = activeDrops.filter(drop => {
-            const dx = player.x - drop.x;
-            const dy = player.y - drop.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            
-            if (dist < player.r + drop.radius) {
-              if (drop.effect === 'recharge_ability') player.abilityCooldown = 0;
-              else if (drop.effect === 'speed_boost') player.speedBoostEnd = Date.now() + drop.boostDuration;
-              else if (drop.effect === 'heal') player.health = Math.min(player.maxHealth, player.health + drop.healAmount);
-              
-              audioManager.play('collectPowerup', { volume: 0.6 });
-              
-              ws.send(JSON.stringify({
-                type: 'game_update',
-                players: [{
-                  id: player.id,
-                  abilityCooldown: player.abilityCooldown,
-                  health: player.health,
-                  dropCollected: drop.type,
-                  powerUpCollected: drop.type,
-                  powerUpSuccess: true
-                }]
-              }));
-
-              if (drop.effect === 'recharge_ability') {
-                ws.send(JSON.stringify({
-                  type: 'player_status',
-                  playerId: player.id,
-                  status: 'ability_ready',
-                  message: 'Ability recharged.'
-                }));
-              }
-              
-              return false;
+        activeDrops = activeDrops.filter(drop => {
+          const dx = player.x - drop.x;
+          const dy = player.y - drop.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          
+          if (dist < player.r + drop.radius) {
+            // Apply effects locally
+            if (drop.effect === 'recharge_ability') {
+                player.abilityCooldown = 0;
+                player.dropCollected = "ABILITY";
+            }
+            else if (drop.effect === 'speed_boost') {
+                player.speedBoostEnd = Date.now() + drop.boostDuration;
+            }
+            else if (drop.effect === 'heal') {
+                player.health = Math.min(player.maxHealth, player.health + drop.healAmount);
             }
             
-            return Date.now() - drop.spawnTime < drop.duration;
-          });
+            audioManager.play('collectPowerup', { volume: 0.6 });
+            
+            // 1. Send Game Update (Stats)
+            ws.send(JSON.stringify({
+              type: 'game_update',
+              players: [{
+                id: player.id,
+                abilityCooldown: player.abilityCooldown,
+                health: player.health,
+                dropCollected: drop.type,
+                powerUpCollected: drop.type,
+                powerUpSuccess: true
+              }]
+            }));
+
+            // 2. Send Status Update (Controller Trigger)
+            if (drop.effect === 'recharge_ability') {
+              ws.send(JSON.stringify({
+                type: 'status',       // <--- CHANGED THIS: Matches controller code
+                playerId: player.id,
+                status: 'ability_ready',
+                message: 'Ability recharged.'
+              }));
+            }
+            
+            return false; // Remove drop
+          }
+          
+          return Date.now() - drop.spawnTime < drop.duration;
+        });
+
         });
 
         // Update bullets
