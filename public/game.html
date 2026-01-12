@@ -1,19 +1,24 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GEO-SHOOTER - Battle Arena</title>
-    <link rel="stylesheet" href="styles/game.css"/>
+    <link rel="stylesheet" href="styles/game.css" />
   </head>
   <body class="start-screen">
     <h1 id="mainTitle">GEO-SHOOTER</h1>
     <div id="mapSelectPanel">
       <p>Choose Your Arena</p>
       <div id="mapSelectCustom">
-        <button id="mapSelectButton" type="button" aria-haspopup="listbox" aria-expanded="false">
+        <button
+          id="mapSelectButton"
+          type="button"
+          aria-haspopup="listbox"
+          aria-expanded="false"
+        >
           <span id="mapSelectLabel">Select map</span>
-      <span id="mapSelectChevron">v</span>
+          <span id="mapSelectChevron">v</span>
         </button>
         <ul id="mapSelectList" role="listbox" aria-label="Map selection"></ul>
       </div>
@@ -31,18 +36,34 @@
         <div id="qrCode" aria-label="Controller QR code"></div>
       </div>
       <div id="qrCaption">
-         <strong>PC and phone must share the same Wi-Fi</strong>
-         <span class="qr-link" id="qrLink"></span>
+        <strong>PC and phone must share the same Wi-Fi</strong>
+        <span class="qr-link" id="qrLink"></span>
       </div>
     </div>
 
     <div id="controls">
-      <div style="display: flex; flex-direction: column; gap: 10px; align-items: center; width: 100%;">
-        <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap; justify-content: center;">
+      <div
+        style="
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          align-items: center;
+          width: 100%;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+          "
+        >
           <input id="room" placeholder="Enter Room ID" value="war123" />
           <button id="connectBtn">Create the arena</button>
         </div>
-        <div style="display: flex; gap: 10px; align-items: center;">
+        <div style="display: flex; gap: 10px; align-items: center">
           <span id="status">Not connected</span>
         </div>
       </div>
@@ -57,16 +78,29 @@
     <div id="mainContainer">
       <div id="gameContainer">
         <canvas id="gameCanvas" width="1100" height="650"></canvas>
-        
+
         <div id="waitingScreen">
           <h2>Waiting for players...</h2>
           <p id="playerCount">0 players connected</p>
           <p id="readyStatus">Waiting for character selection</p>
-          <div class="divider" style="width: 80%; height: 1px; background: linear-gradient(to right, transparent, rgba(255, 107, 53, 0.4), transparent); margin: 20px auto;"></div>
+          <div
+            class="divider"
+            style="
+              width: 80%;
+              height: 1px;
+              background: linear-gradient(
+                to right,
+                transparent,
+                rgba(255, 107, 53, 0.4),
+                transparent
+              );
+              margin: 20px auto;
+            "
+          ></div>
         </div>
 
         <div id="gameEndScreen">
-      <div id="trophyIcon" style="font-size: 4em;"></div>
+          <div id="trophyIcon" style="font-size: 4em"></div>
           <h2 id="endTitle">WINNER!</h2>
           <div id="winnerName" class="winner-name"></div>
           <div id="winnerStats" class="stats"></div>
@@ -80,7 +114,7 @@
       </div>
 
       <div id="scoreboard">
-        <h2> SCOREBOARD</h2>
+        <h2>SCOREBOARD</h2>
         <div id="mapName">Map: Training Ground</div>
         <ul id="scoreList"></ul>
       </div>
