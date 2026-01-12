@@ -104,7 +104,11 @@ node server.js
 - **💚 Balanced**: All-around stats with a **Heal Burst** ability.
 - **🔥 Assault**: High fire rate with a **Triple Shot** ability.
 
-5. **Battle**: Tilt your phone to move, and use the on-screen buttons to shoot and trigger abilities.
+5. **Calibrate & Battle**:
+
+- Select your hero class.
+- Follow the on-screen prompts to calibrate your phone's sensors.
+- Tilt your phone to move and tap the **SHOOT** or **SPECIAL** buttons to play.
 
 ---
 
