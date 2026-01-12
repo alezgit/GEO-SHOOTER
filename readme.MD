@@ -90,6 +90,7 @@ node server.js or npm run start
 
 ## 📂 Project Structure
 
+- `sounds`: Folder containing sounds used throughout the game.
 - `server.js`: Node.js server managing rooms and WebSocket synchronization.
 - `landing.html`: Entry gateway for selecting host or player roles.
 - `GEOSHOOTER.html`: The core game engine, map logic, and physics.
