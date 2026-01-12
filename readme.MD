@@ -30,7 +30,6 @@
 - **Frontend**: HTML5 Canvas, CSS3 Grid/Animations, Vanilla JavaScript (ES6+).
 - **Libraries**:
 - **Chart.js**: For character stat visualization on the controller.
-- **Eruda**: Mobile console for on-device debugging.
 
 ---
 
@@ -69,7 +68,7 @@ openssl req -nodes -new -x509 -keyout certs/key.pem -out certs/cert.pem
 
 ```bash
 # Start the server
-node server.js or npm run start
+npm run start
 
 ```
 
