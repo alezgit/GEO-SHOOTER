@@ -1,11 +1,3 @@
-## Group Members (G05) - FEUP-MM0047
-
-```
-Alessandro Zocchi
-Dayo Ashaolu
-Paolo Pascarelli
-```
-
 # GEO-SHOOTER: Battle Arena
 
 **GEO-SHOOTER** is a fast-paced, multiplayer battle arena game designed for local cooperative or competitive play. It features a unique control scheme where players use their mobile devices as motion-sensitive controllers to navigate and battle on a central computer screen.
