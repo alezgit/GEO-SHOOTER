@@ -5,6 +5,7 @@ const http = require("http");
 const https = require("https");
 const fs = require("fs");
 const WebSocket = require("ws");
+const os = require("os");
 
 const app = express();
 
@@ -82,6 +83,35 @@ app.get("/pc", (req, res) =>
 app.get("/phone", (req, res) =>
   res.sendFile(path.join(__dirname, "public", "controller_GEOSHOOTER.html"))
 );
+
+app.get("/server-info", (req, res) => {
+  const interfaces = os.networkInterfaces();
+  const candidates = [];
+
+  for (const net of Object.values(interfaces)) {
+    for (const iface of net || []) {
+      const isV4 = iface.family === "IPv4" || iface.family === 4;
+      if (isV4 && !iface.internal) {
+        candidates.push(iface.address);
+      }
+    }
+  }
+
+  const isPrivate = (addr) =>
+    addr.startsWith("10.") ||
+    addr.startsWith("192.168.") ||
+    /^172\.(1[6-9]|2\d|3[0-1])\./.test(addr);
+
+  const privateIps = candidates.filter(isPrivate);
+  let ip = privateIps[0] || candidates[0] || "localhost";
+
+  const protocol = useHttps ? "https" : "http";
+  const port = server.address()?.port || (useHttps ? 8443 : 3000);
+  const baseUrl = `${protocol}://${ip}:${port}`;
+
+  res.set("Cache-Control", "no-store");
+  res.json({ baseUrl, ips: privateIps, protocol, port });
+});
 
 wss.on("connection", (ws) => {
   ws.on("message", (msg) => {

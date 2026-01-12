@@ -121,7 +121,7 @@
         box-shadow: none;
       }
 
-      #qrCode {
+      #qrCode img {
         width: 200px;
         height: 200px;
         border-radius: 8px;
@@ -140,6 +140,14 @@
       #qrCaption strong {
         color: #ff6b35;
         font-weight: 400;
+      }
+
+      #qrCaption .qr-link {
+        display: block;
+        margin-top: 6px;
+        font-size: 0.85em;
+        color: rgba(255, 255, 255, 0.6);
+        word-break: break-all;
       }
 
       body:not(.start-screen) #qrBlock {
@@ -742,10 +750,11 @@
     </div>
     <div id="qrBlock">
       <div id="qrFrame">
-        <img id="qrCode" alt="Controller QR code" />
+        <div id="qrCode" aria-label="Controller QR code"></div>
       </div>
       <div id="qrCaption">
-         <strong>PC and phone must share the same Wi-Fi</strong> 
+         <strong>PC and phone must share the same Wi-Fi</strong>
+         <span class="qr-link" id="qrLink"></span>
       </div>
     </div>
 
@@ -799,6 +808,7 @@
       </div>
     </div>
 
+    <script src="vendor/qrcode.min.js"></script>
     <script>
       // ============ AUDIO SYSTEM ============
       class AudioManager {
@@ -859,7 +869,7 @@
           if (this.isMuted || !this.bgMusic) return;
           
           this.bgMusic.volume = this.volume * 0.3;
-          this.bgMusic.play().catch(err => {
+          return this.bgMusic.play().catch(err => {
             console.warn('Failed to play background music', err);
           });
         }
@@ -894,9 +904,17 @@
           
           return this.isMuted;
         }
+
+        setMuted(state) {
+          this.isMuted = Boolean(state);
+          if (this.isMuted) {
+            this.stopBgMusic();
+          }
+        }
       }
 
       const audioManager = new AudioManager();
+      let shouldResumeAudio = false;
 
       document.getElementById('muteBtn').onclick = () => {
         const isMuted = audioManager.toggleMute();
@@ -907,7 +925,49 @@
         audioManager.setVolume(e.target.value / 100);
       };
 
-      audioManager.loadSounds();
+      function restoreAudioState() {
+        const stateRaw = localStorage.getItem('geo_audio_state');
+        if (!stateRaw) return;
+
+        let state;
+        try {
+          state = JSON.parse(stateRaw);
+        } catch (err) {
+          return;
+        }
+
+        if (typeof state.volume === 'number') {
+          audioManager.setVolume(state.volume);
+          document.getElementById('volumeSlider').value = Math.round(state.volume * 100);
+        }
+
+        if (typeof state.muted === 'boolean') {
+          audioManager.setMuted(state.muted);
+          document.getElementById('muteBtn').textContent = state.muted ? 'MUTED' : 'SOUND';
+        }
+
+        if (audioManager.bgMusic && typeof state.time === 'number') {
+          audioManager.bgMusic.currentTime = state.time;
+        }
+
+        shouldResumeAudio = Boolean(state.playing && !audioManager.isMuted);
+      }
+
+      audioManager.loadSounds().then(() => {
+        restoreAudioState();
+        if (shouldResumeAudio) {
+          audioManager.playBgMusic();
+        }
+      });
+
+      function resumeAudioOnInteraction() {
+        if (!shouldResumeAudio || audioManager.isMuted || !audioManager.bgMusic) return;
+        if (!audioManager.bgMusic.paused) return;
+        audioManager.playBgMusic();
+      }
+
+      document.body.addEventListener('click', resumeAudioOnInteraction);
+      document.body.addEventListener('touchstart', resumeAudioOnInteraction);
 
       // ============ GAME CODE ============
       const canvas = document.getElementById("gameCanvas");
@@ -1708,13 +1768,45 @@
         }
       });
 
-      const qrImg = document.getElementById('qrCode');
-      if (qrImg) {
-        const controllerUrl = `${window.location.origin}/controller_GEOSHOOTER.html`;
-        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(controllerUrl)}`;
-        qrImg.src = qrUrl;
-        qrImg.alt = `QR code for ${controllerUrl}`;
+      async function initQrCode() {
+        const qrImg = document.getElementById('qrCode');
+        if (!qrImg || typeof qrcode !== 'function') return;
+
+        let baseUrl = window.location.origin;
+        try {
+          const response = await fetch('/server-info', { cache: 'no-store' });
+          if (response.ok) {
+            const data = await response.json();
+            if (data && typeof data.baseUrl === 'string') {
+              baseUrl = data.baseUrl;
+            }
+            if (data && Array.isArray(data.ips) && data.ips.length) {
+              if (baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1')) {
+                const protocol = data.protocol || window.location.protocol.replace(':', '');
+                const port = data.port || window.location.port;
+                baseUrl = `${protocol}://${data.ips[0]}:${port}`;
+              }
+            }
+          }
+        } catch (err) {
+          console.warn('Failed to resolve server info, using current origin', err);
+        }
+
+        const controllerUrl = `${baseUrl}/phone`;
+        const qr = qrcode(0, 'M');
+        qr.addData(controllerUrl);
+        qr.make();
+        qrImg.innerHTML = qr.createImgTag(6, 0);
+        qrImg.setAttribute('aria-label', `QR code for ${controllerUrl}`);
+        qrImg.setAttribute('data-url', controllerUrl);
+
+        const qrLink = document.getElementById('qrLink');
+        if (qrLink) {
+          qrLink.textContent = controllerUrl;
+        }
       }
+
+      initQrCode();
 
       const ambientAudio = document.getElementById('ambientAudio');
       const ambientAudioLabel = document.getElementById('ambientAudioLabel');
@@ -2866,7 +2958,7 @@
           ctx.font = "bold 12px 'Segoe UI'";
           ctx.textBaseline = "bottom";
           const displayName = player.name || char.name;
-          ctx.fillText(displayName, player.x, player.y - player.r - 32);
+          ctx.fillText(displayName, player.x, player.y - player.r - 42);
 
           // Ability cooldown
           const cooldownRemaining = Math.max(0, player.abilityCooldown - Date.now());
